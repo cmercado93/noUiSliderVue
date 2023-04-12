@@ -1,12 +1,15 @@
 <template>
     <div class="base">
         <v-slider
-          :configs="slider.configs"
-          @update="updateCurrentDataText"
-          ref="slider"
+            v-model="values"
+            :start="configs.start"
+            :step="configs.step"
+            :connect="configs.connect"
+            :range="configs.range"
+            ref="slider"
         ></v-slider>
         <div style="margin-top: 50px;"></div>
-        <p>Current data: {{currentData}}</p>
+        <p>Current data: {{values}}</p>
         <br>
         <button type="button" @click.prevent="slider_reset">Reset</button>
         <br>
@@ -27,32 +30,26 @@
 
         data() {
             return {
-                currentData: {},
-                slider: {
-                    configs: {
-                        start: 0,
-                        step: 1,
-                        connect: "lower",
-                        range: {
-                            'min': 0,
-                            'max': 10,
-                        },
-                    }
-                },
+                values: 2,
+                configs: {
+                    start: 0,
+                    step: 1,
+                    connect: "lower",
+                    range: {
+                        min: 1,
+                        max: 10,
+                    },
+                }
             }
         },
 
         methods: {
-            updateCurrentDataText(value) {
-                this.currentData = value;
-            },
-
             slider_reset() {
                 this.$refs.slider.reset();
             },
 
             slider_setValue() {
-                this.$refs.slider.set(4);
+                this.values = 5;
             },
 
             slider_addPips() {

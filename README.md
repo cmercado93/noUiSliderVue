@@ -12,10 +12,14 @@ Este cuenta con la configuración básica que brinda el complemento original.
 <script src="dist/nouislidervue.umd.js"></script>
 
 <div id="app">
-    <p>{{currentValue}}</p>
+    <p>Current data: {{values}}</p>
     <vue-slider
-        :configs="configs"
-        @update="updateCurrentValue"
+        v-model="values"
+        :start="configs.start"
+        :step="configs.step"
+        :connect="configs.connect"
+        :range="configs.range"
+        ref="slider"
     ></vue-slider>
 </div>
 
@@ -25,21 +29,18 @@ Este cuenta con la configuración básica que brinda el complemento original.
     createApp({
         data() {
             return {
-                currentValue: null,
+                values: 1,
                 configs: {
                     start: 0,
+                    step: 1,
+                    connect: "lower",
                     range: {
-                        min: 0,
+                        min: 1,
                         max: 10,
                     },
-                },
+                }
             }
         },
-        methods: {
-            updateCurrentValue({ values }) {
-                this.currentValue = values;
-            },
-        }
     })
     .component('vue-slider', noUiSliderVue)
     .mount('#app')
