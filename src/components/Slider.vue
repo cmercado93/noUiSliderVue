@@ -446,6 +446,17 @@
                 },
                 deep: true,
             },
+
+            range: {
+                handler(v) {
+                    this.updateOptions({
+                        range: v,
+                    });
+
+                    this.$nextTick(() => this.reset());
+                },
+                deep: true,
+            },
         },
 
         emits: [
