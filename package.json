@@ -9,7 +9,15 @@
     ".": {
       "require": "./dist/nouislider-vue3.umd.js",
       "import": "./dist/nouislider-vue3.mjs"
+    },
+    "./css": {
+      "require": "./dist/nouislider-vue3.css",
+      "import": "./dist/nouislider-vue3.css"
     }
+  },
+  "engines" : {
+    "npm" : ">=8.5.0",
+    "node" : ">=16.14"
   },
   "scripts": {
     "dev": "vite",

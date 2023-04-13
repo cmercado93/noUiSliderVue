@@ -128,6 +128,8 @@
                 type: Object,
             },
 
+            pipsys: {},
+
             snap: {
                 type: Boolean,
             },
@@ -212,6 +214,12 @@
 
                 if (this.format) {
                     configs['format'] = this.format;
+                }
+
+                if (this.pipsys != undefined && !configs['pips']) {
+                    configs['pips'] = {
+                        mode: 'range',
+                    };
                 }
 
                 noUiSlider.create(this.getReference(), configs);
@@ -453,22 +461,22 @@
 
         expose: [
             'destroy',
-            'steps',
+            'getSteps',
             'on',
             'off',
             'get',
             'set',
             'setHandle',
             'reset',
-            'disable',
-            'enable',
+            'setDisable',
+            'setEnable',
             'updateOptions',
             'removePips',
             'removeTooltips',
             'getPositions',
             'getTooltips',
             'getOrigins',
-            'pips',
+            'setPips',
         ],
     }
 </script>
