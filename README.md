@@ -1,6 +1,6 @@
 # noUiSliderVue
 
-noUiSliderVue es una capa de Vue.js 3 sobre el complemento noUiSlider.
+noUiSliderVue es un componente de Vue basado en [noUiSlider](https://github.com/leongersen/noUiSlider).
 
 Este cuenta con la configuración básica que brinda el complemento original.
 

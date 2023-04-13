@@ -1,7 +1,7 @@
 {
   "name": "nouislidervue",
   "version": "0.0.0",
-  "description": "noUiSliderVue es una capa de VueJS sobre el complemento noUiSlider",
+  "description": "noUiSliderVue es un componente de Vue basado en noUiSlider",
   "main": "./dist/nouislidervue.umd.js",
   "module": "./dist/nouislidervue.mjs",
   "style": "./dist/nouislidervue.css",
