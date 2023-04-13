@@ -12,10 +12,12 @@
                     return "slider-" + ((Math.random() + 1).toString(36).substring(7));
                 },
             },
+
             values: {
                 type: [Array, Number],
                 default: 0,
             },
+
             start: {
                 type: [Array, Number],
                 required: true,
@@ -27,6 +29,7 @@
                     return true;
                 },
             },
+
             connect: {
                 type: [Array, Boolean, String],
                 default: false,
@@ -38,16 +41,20 @@
                     return true;
                 },
             },
+
             range: {
                 type: Object,
                 required: true,
             },
+
             step: {
                 type: Number,
             },
+
             margin: {
                 type: Number,
             },
+
             padding: {
                 type: [Array, Number],
                 validator(v) {
@@ -59,53 +66,96 @@
                 },
                 default: 0,
             },
+
             limit: {
                 type: Number,
             },
+
             direction: {
                 type: String,
                 default: 'ltr',
             },
+
             orientation: {
                 type: String,
                 default: "horizontal",
             },
+
             animate: {
                 type: Boolean,
                 default: false,
             },
+
             handleAttributes: {
                 type: Array,
             },
+
             keyboardSupport: {
-                type: Number,
+                type: Boolean,
                 default: true,
             },
+
             keyboardDefaultStep: {
                 type: Number,
                 default: 10,
             },
+
             keyboardPageMultiplier: {
                 type: Number,
                 default: 5,
             },
+
             keyboardMultiplier: {
                 type: Number,
                 default: 1,
             },
+
             behaviour: {
+                type: String,
                 default: 'tap',
             },
+
             tooltips: {
+                type: [Array, Object, Boolean],
                 default: false,
             },
-            format: {},
-            pips: {},
-            snap: {},
-            ariaFormat: {},
+
+            format: {
+                type: Object,
+            },
+
+            pips: {
+                type: Object,
+            },
+
+            snap: {
+                type: Boolean,
+            },
+
+            ariaFormat: {
+                type: Object,
+            },
+
             modelValue: {
                 type: [Number, Array, String],
             },
+
+            cssPrefix: {
+                type: String,
+            },
+
+            cssClasses: {
+                type: Object,
+            },
+
+            animationDuration: {
+                type: Number,
+            },
+
+            disable: {
+                type: Boolean,
+                default: false,
+            }
         },
 
         data() {
@@ -135,7 +185,6 @@
                     start: this.start,
                     connect: this.connect,
                     range: this.range,
-
                     step: this.step,
                     margin: this.margin,
                     padding: this.padding,
@@ -152,6 +201,9 @@
                     tooltips: this.tooltips,
                     pips: this.pips,
                     snap: this.snap,
+                    cssPrefix: this.cssPrefix,
+                    cssClasses: this.cssClasses,
+                    animationDuration: this.animationDuration,
                 };
 
                 if (this.ariaFormat) {
@@ -246,7 +298,7 @@
                 this.getReference().noUiSlider.destroy();
             },
 
-            steps() {
+            getSteps() {
                 return this.getReference().noUiSlider.steps();
             },
 
@@ -275,11 +327,11 @@
                 this.getReference().noUiSlider.reset(fireSetEvent);
             },
 
-            disable(handleNumber) {
+            setDisable(handleNumber) {
                 this.getReference().noUiSlider.disable(handleNumber);
             },
 
-            enable(handleNumber) {
+            setEnable(handleNumber) {
                 this.getReference().noUiSlider.enable(handleNumber);
             },
 
@@ -307,7 +359,7 @@
                 return this.getReference().noUiSlider.getOrigins();
             },
 
-            pips(grid) {
+            setPips(grid) {
                 return this.getReference().noUiSlider.pips(grid);
             },
         },
@@ -318,11 +370,71 @@
                     this.set(v, false);
                 }
             },
+
             modelValue: {
                 handler(v) {
                     if (!this.compareValues(v, this.get())) {
                         this.set(v, false);
                     }
+                },
+                deep: true,
+            },
+
+            pips: {
+                handler(v) {
+                    this.removePips();
+
+                    this.$nextTick(() => this.setPips(v));
+                },
+                deep: true,
+            },
+
+            disable(v) {
+                if (v) {
+                    this.setDisable();
+                } else {
+                    this.setEnable();
+                }
+            },
+
+            step(v) {
+                this.updateOptions({
+                    step: v,
+                });
+            },
+
+            margin(v) {
+                this.updateOptions({
+                    margin: v,
+                });
+            },
+
+            padding: {
+                handler(v) {
+                    this.updateOptions({
+                        padding: v,
+                    });
+                },
+                deep: true,
+            },
+
+            limit(v) {
+                this.updateOptions({
+                    limit: v,
+                });
+            },
+
+            tooltips(v) {
+                this.updateOptions({
+                    tooltips: v,
+                });
+            },
+
+            format: {
+                handler(v) {
+                    this.updateOptions({
+                        format: v,
+                    });
                 },
                 deep: true,
             },

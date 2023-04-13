@@ -1,20 +1,20 @@
 {
-  "name": "nouislidervue",
+  "name": "nouislider-vue3",
   "version": "0.0.0",
   "description": "noUiSliderVue es un componente de Vue basado en noUiSlider",
-  "main": "./dist/nouislidervue.umd.js",
-  "module": "./dist/nouislidervue.mjs",
-  "style": "./dist/nouislidervue.css",
+  "main": "./dist/nouislider-vue3.umd.js",
+  "module": "./dist/nouislider-vue3.mjs",
+  "style": "./dist/nouislider-vue3.css",
   "exports": {
     ".": {
-      "require": "./dist/nouislidervue.umd.js",
-      "import": "./dist/nouislidervue.mjs"
+      "require": "./dist/nouislider-vue3.umd.js",
+      "import": "./dist/nouislider-vue3.mjs"
     }
   },
   "scripts": {
     "dev": "vite",
     "build": "vite build && npm run minify:mjs",
-    "minify:mjs": "uglifyjs dist/nouislidervue.mjs --compress --mangle --output dist/nouislidervue.mjs"
+    "minify:mjs": "uglifyjs dist/nouislider-vue3.mjs --compress --mangle --output dist/nouislider-vue3.mjs"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.1.0",

@@ -31,7 +31,7 @@ Este cuenta con la configuración básica que brinda el complemento original.
             return {
                 values: 1,
                 configs: {
-                    start: 0,
+                    start: 1,
                     step: 1,
                     connect: "lower",
                     range: {

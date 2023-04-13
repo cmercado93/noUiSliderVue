@@ -12,7 +12,7 @@ export default defineConfig({
         lib: {
             entry: resolve(__dirname, 'src/components/index.js'),
             name: 'noUiSliderVue',
-            fileName: 'nouislidervue',
+            fileName: 'nouislider-vue3',
             formats: ['es', 'umd'],
         },
         rollupOptions: {
@@ -23,7 +23,7 @@ export default defineConfig({
                 },
                 assetFileNames: (assetInfo) => {
                     if (assetInfo.name === 'style.css') {
-                        return 'nouislidervue.css';
+                        return 'nouislider-vue3.css';
                     }
 
                     return assetInfo.name;
