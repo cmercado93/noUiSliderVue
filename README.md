@@ -25,6 +25,7 @@ npm install --save nouislider-vue3
     </div>
 </template>
 <script>
+    import 'nouislider-vue3/css';
     import VSlider from 'nouislider-vue3';
 
     export default {
@@ -91,3 +92,90 @@ npm install --save nouislider-vue3
     .mount('#app')
 </script>
 ```
+
+## Props
+
+| Nombre | Tipo | Default | Requerido |
+|---|---|---|---|
+| values | [Array, Number] | 0 |  |
+| start | [Array, Number] |  | :heavy_check_mark: |
+| connect | [Array, Boolean, String] | false |  |
+| range | Object |  | :heavy_check_mark: |
+| step | Number |  |  |
+| margin | Number |  |  |
+| padding | [Array, Number] | 0 |  |
+| limit | Number |  |  |
+| direction | String | ltr |  |
+| orientation | String | horizontal |  |
+| animate | Boolean | false |  |
+| handleAttributes | Array |  |  |
+| keyboardSupport | Boolean | true |  |
+| keyboardDefaultStep | Number | 10 |  |
+| keyboardPageMultiplier | Number | 5 |  |
+| keyboardMultiplier | Number | 1 |  |
+| behaviour | String | tap |  |
+| tooltips | [Array, Object, Boolean] | false |  |
+| format | Object |  |  |
+| pips | Object |  |  |
+| snap | Boolean |  |  |
+| ariaFormat | Object |  |  |
+| modelValue | [Number, Array, String] |  |  |
+| cssPrefix | String |  |  |
+| cssClasses | Object |  |  |
+| animationDuration | Number |  |  |
+| disable | Boolean | false |  |
+| pipsys | Boolean |  |  |
+
+## Eventos
+
+| Nombre |
+| --- |
+| update |
+| start |
+| slide |
+| drag |
+| change |
+| set |
+| end |
+
+Todos los eventos responden objetos similares
+
+##### Ejemplo
+
+```json
+{
+    "values":[
+        0
+    ],
+    "handle":0,
+    "unencoded":[
+        0
+    ],
+    "tap":true,
+    "positions":[
+        0
+    ]
+}
+```
+
+## Metodos publicos
+
+| Nombre |
+| --- |
+| on |
+| off |
+| get |
+| set |
+| reset |
+| destroy |
+| setHandle |
+| setDisable |
+| setEnable |
+| setPips |
+| updateOptions |
+| getSteps |
+| getPositions |
+| getTooltips |
+| getOrigins |
+| removePips |
+| removeTooltips |
