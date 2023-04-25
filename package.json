@@ -1,6 +1,6 @@
 {
   "name": "nouislider-vue3",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "noUiSliderVue es un componente de Vue basado en noUiSlider",
   "main": "./dist/nouislider-vue3.umd.js",
   "module": "./dist/nouislider-vue3.mjs",
