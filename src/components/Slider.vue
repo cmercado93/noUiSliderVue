@@ -126,6 +126,7 @@
 
             pips: {
                 type: Object,
+                default: null,
             },
 
             pipsys: {},
@@ -218,7 +219,7 @@
 
                 if (this.pipsys != undefined && !configs['pips']) {
                     configs['pips'] = {
-                        mode: 'range',
+                        mode: 'steps',
                     };
                 }
 
