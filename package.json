@@ -15,9 +15,9 @@
       "import": "./dist/nouislider-vue3.css"
     }
   },
-  "engines" : {
-    "npm" : ">=8.5.0",
-    "node" : ">=16.14"
+  "engines": {
+    "npm": ">=8.5.0",
+    "node": ">=16.14"
   },
   "scripts": {
     "dev": "vite",
