@@ -28,7 +28,7 @@
     "@vitejs/plugin-vue": "^4.1.0",
     "nouislider": "^15.7.0",
     "uglify-js": "^3.17.4",
-    "vite": "^4.1.4",
+    "vite": "^4.3.9",
     "vue": "^3.2.47"
   },
   "repository": {
