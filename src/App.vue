@@ -37,11 +37,12 @@
 
         data() {
             return {
-                values: 2,
+                pips_mode: true,
+                values: null,
                 configs: {
                     disable: false,
                     tooltips: false,
-                    start: 0,
+                    start: null,
                     step: 1,
                     connect: "lower",
                     range: {
@@ -74,9 +75,17 @@
             },
 
             slider_changePips() {
-                this.configs.pips.density = 5;
-                this.configs.pips.mode = 'range';
-                this.configs.pips.format.to = (v) => v + " sec";
+                if (this.pips_mode) {
+                    this.configs.pips.density = 5;
+                    this.configs.pips.mode = 'range';
+                    this.configs.pips.format.to = (v) => v + " sec";
+                } else {
+                    this.configs.pips.density = 10;
+                    this.configs.pips.mode = 'steps';
+                    this.configs.pips.format.to = (v) => v + " value";
+                }
+
+                this.pips_mode = !this.pips_mode;
             },
 
             slider_removePips() {

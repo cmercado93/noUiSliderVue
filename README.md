@@ -98,7 +98,7 @@ npm install --save nouislider-vue3
 | Nombre | Tipo | Default | Requerido |
 |---|---|---|---|
 | values | [Array, Number] | 0 |  |
-| start | [Array, Number] |  | :heavy_check_mark: |
+| start | [Array, Number] |  |  |
 | connect | [Array, Boolean, String] | false |  |
 | range | Object |  | :heavy_check_mark: |
 | step | Number |  |  |
@@ -119,7 +119,7 @@ npm install --save nouislider-vue3
 | pips | Object |  |  |
 | snap | Boolean |  |  |
 | ariaFormat | Object |  |  |
-| modelValue | [Number, Array, String] |  |  |
+| modelValue | [Number, Array, String] |  | :heavy_check_mark: |
 | cssPrefix | String |  |  |
 | cssClasses | Object |  |  |
 | animationDuration | Number |  |  |
