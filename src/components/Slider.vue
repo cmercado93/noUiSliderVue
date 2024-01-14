@@ -13,14 +13,8 @@
                 },
             },
 
-            values: {
-                type: [Array, Number],
-                default: 0,
-            },
-
             start: {
                 type: [Array, Number],
-                required: true,
                 validator(v) {
                     if (typeof v == "object") {
                         return v.length && v.every(i => typeof i == "number");
@@ -140,7 +134,8 @@
             },
 
             modelValue: {
-                type: [Number, Array, String],
+                required: true,
+                type: [Number, Array, String, null],
             },
 
             cssPrefix: {
@@ -184,8 +179,18 @@
             },
 
             create() {
+                let start = this.modelValue;
+
+                if (this.start !== undefined && this.start !== null) {
+                    start = this.start;
+                }
+
+                if (start === null) {
+                    start = Object.values(this.range)[0];
+                }
+
                 let configs = {
-                    start: this.start,
+                    start: start,
                     connect: this.connect,
                     range: this.range,
                     step: this.step,
