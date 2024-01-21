@@ -21,7 +21,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run minify:mjs",
+    "build": "vite build",
     "minify:mjs": "uglifyjs dist/nouislider-vue3.mjs --compress --mangle --output dist/nouislider-vue3.mjs"
   },
   "devDependencies": {
