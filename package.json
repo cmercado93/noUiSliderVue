@@ -20,21 +20,31 @@
     "node": ">=16.14"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build",
     "minify:mjs": "uglifyjs dist/nouislider-vue3.mjs --compress --mangle --output dist/nouislider-vue3.mjs"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.1.0",
+    "@vitejs/plugin-vue": "^4.6.2",
     "nouislider": "^15.7.1",
     "uglify-js": "^3.17.4",
-    "vite": "^4.3.9",
+    "vite": "^4.5.2",
     "vue": "^3.4.13"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cmercado93/noUiSliderVue.git"
   },
+  "keywords": [
+    "Vue",
+    "VueJS",
+    "Vue3",
+    "nouislider",
+    "slider",
+    "component",
+    "range",
+    "slider"
+  ],
   "author": "Carlos Mercado <cmercado93@outlook.com>",
   "license": "MIT",
   "bugs": {
