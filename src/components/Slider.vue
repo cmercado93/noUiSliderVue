@@ -185,7 +185,7 @@
                     start = this.start;
                 }
 
-                if (start === null) {
+                if (start == null) {
                     start = Object.values(this.range)[0];
                 }
 
