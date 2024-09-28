@@ -4,6 +4,16 @@
 <script>
     import noUiSlider from 'nouislider';
 
+    // Lista general de eventos de nouislider
+    const generalEvents = [
+        'start',
+        'slide',
+        'drag',
+        'change',
+        'set',
+        'end',
+    ];
+
     export default {
         props: {
             id: {
@@ -185,7 +195,7 @@
         mounted() {
             this.create();
 
-            this.startBasicEvents();
+            this.registerEvents();
         },
 
         beforeUnmount() {
@@ -250,24 +260,6 @@
                 noUiSlider.create(this.getReference(), configs);
             },
 
-            startBasicEvents() {
-                this.startUpdate();
-                this.startStart();
-                this.startSlide();
-                this.startDrag();
-                this.startChange();
-                this.startSet();
-                this.startEnd();
-            },
-
-            offAllEvents() {
-                let l = this.events.length;
-
-                for (let i = 0;i < l;i++) {
-                    this.off(this.events.pop());
-                }
-            },
-
             normalizeTooltip(v) {
                 if (typeof v == 'function') {
                     return {
@@ -282,10 +274,39 @@
                 return v;
             },
 
+            compareValues(v1, v2) {
+                v1 = JSON.stringify(v1);
+                v2 = JSON.stringify(v2);
+
+                return v1 == v2;
+            },
+
             // Events
-            startUpdate() {
+            registerEvents() {
+                generalEvents.map(event => {
+                    this.registerBasicEvent(event);
+                });
+
+                this.regiterUpdateEvent();
+            },
+
+            offAllEvents() {
+                let l = this.events.length;
+
+                for (let i = 0;i < l;i++) {
+                    this.off(this.events.pop());
+                }
+            },
+
+            registerBasicEvent(eventName) {
+                this.on(eventName, (values, handle, unencoded, tap, positions) => {
+                    this.$emit(eventName, {values, handle, unencoded, tap, positions})
+                });
+            },
+
+            regiterUpdateEvent() {
                 this.on('update', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('update', {values, handle, unencoded, tap, positions});
+                    this.$emit('update', {values, handle, unencoded, tap, positions})
 
                     let value = values.length > 1 ? values : values[0];
 
@@ -293,49 +314,6 @@
 
                     this.$emit('update:modelValue', value);
                 });
-            },
-
-            startStart() {
-                this.on('start', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('start', {values, handle, unencoded, tap, positions})
-                });
-            },
-
-            startSlide() {
-                this.on('slide', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('slide', {values, handle, unencoded, tap, positions})
-                });
-            },
-
-            startDrag() {
-                this.on('drag', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('drag', {values, handle, unencoded, tap, positions})
-                });
-            },
-
-            startChange() {
-                this.on('change', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('change', {values, handle, unencoded, tap, positions})
-                });
-            },
-
-            startSet() {
-                this.on('set', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('set', {values, handle, unencoded, tap, positions})
-                });
-            },
-
-            startEnd() {
-                this.on('end', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('end', {values, handle, unencoded, tap, positions})
-                });
-            },
-
-            compareValues(v1, v2) {
-                v1 = JSON.stringify(v1);
-                v2 = JSON.stringify(v2);
-
-                return v1 == v2;
             },
 
             // Public methods
@@ -499,13 +477,8 @@
         },
 
         emits: [
+            ...generalEvents,
             'update',
-            'start',
-            'slide',
-            'drag',
-            'change',
-            'set',
-            'end',
             'update:modelValue',
         ],
 
