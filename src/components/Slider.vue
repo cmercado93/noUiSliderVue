@@ -4,6 +4,17 @@
 <script>
     import noUiSlider from 'nouislider';
 
+    // Lista general de eventos de nouislider
+    const generalEvents = [
+        'update',
+        'start',
+        'slide',
+        'drag',
+        'change',
+        'set',
+        'end',
+    ];
+
     export default {
         props: {
             id: {
@@ -251,13 +262,9 @@
             },
 
             startBasicEvents() {
-                this.startUpdate();
-                this.startStart();
-                this.startSlide();
-                this.startDrag();
-                this.startChange();
-                this.startSet();
-                this.startEnd();
+                generalEvents.map(event => {
+                    this.registerEvent(event);
+                });
             },
 
             offAllEvents() {
@@ -295,39 +302,9 @@
                 });
             },
 
-            startStart() {
-                this.on('start', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('start', {values, handle, unencoded, tap, positions})
-                });
-            },
-
-            startSlide() {
-                this.on('slide', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('slide', {values, handle, unencoded, tap, positions})
-                });
-            },
-
-            startDrag() {
-                this.on('drag', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('drag', {values, handle, unencoded, tap, positions})
-                });
-            },
-
-            startChange() {
-                this.on('change', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('change', {values, handle, unencoded, tap, positions})
-                });
-            },
-
-            startSet() {
-                this.on('set', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('set', {values, handle, unencoded, tap, positions})
-                });
-            },
-
-            startEnd() {
-                this.on('end', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('end', {values, handle, unencoded, tap, positions})
+            registerEvent(eventName) {
+                this.on(eventName, (values, handle, unencoded, tap, positions) => {
+                    this.$emit(eventName, {values, handle, unencoded, tap, positions})
                 });
             },
 
@@ -499,13 +476,7 @@
         },
 
         emits: [
-            'update',
-            'start',
-            'slide',
-            'drag',
-            'change',
-            'set',
-            'end',
+            ...generalEvents,
             'update:modelValue',
         ],
 
