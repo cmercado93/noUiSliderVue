@@ -6,7 +6,6 @@
 
     // Lista general de eventos de nouislider
     const generalEvents = [
-        'update',
         'start',
         'slide',
         'drag',
@@ -261,20 +260,6 @@
                 noUiSlider.create(this.getReference(), configs);
             },
 
-            startBasicEvents() {
-                generalEvents.map(event => {
-                    this.registerEvent(event);
-                });
-            },
-
-            offAllEvents() {
-                let l = this.events.length;
-
-                for (let i = 0;i < l;i++) {
-                    this.off(this.events.pop());
-                }
-            },
-
             normalizeTooltip(v) {
                 if (typeof v == 'function') {
                     return {
@@ -289,17 +274,28 @@
                 return v;
             },
 
+            compareValues(v1, v2) {
+                v1 = JSON.stringify(v1);
+                v2 = JSON.stringify(v2);
+
+                return v1 == v2;
+            },
+
             // Events
-            startUpdate() {
-                this.on('update', (values, handle, unencoded, tap, positions) => {
-                    this.$emit('update', {values, handle, unencoded, tap, positions});
-
-                    let value = values.length > 1 ? values : values[0];
-
-                    this.currentValues = value;
-
-                    this.$emit('update:modelValue', value);
+            startBasicEvents() {
+                generalEvents.map(event => {
+                    this.registerEvent(event);
                 });
+
+                this.startUpdate();
+            },
+
+            offAllEvents() {
+                let l = this.events.length;
+
+                for (let i = 0;i < l;i++) {
+                    this.off(this.events.pop());
+                }
             },
 
             registerEvent(eventName) {
@@ -308,11 +304,16 @@
                 });
             },
 
-            compareValues(v1, v2) {
-                v1 = JSON.stringify(v1);
-                v2 = JSON.stringify(v2);
+            startUpdate() {
+                this.on('update', (values, handle, unencoded, tap, positions) => {
+                    this.$emit('update', {values, handle, unencoded, tap, positions})
 
-                return v1 == v2;
+                    let value = values.length > 1 ? values : values[0];
+
+                    this.currentValues = value;
+
+                    this.$emit('update:modelValue', value);
+                });
             },
 
             // Public methods
@@ -477,6 +478,7 @@
 
         emits: [
             ...generalEvents,
+            'update',
             'update:modelValue',
         ],
 
