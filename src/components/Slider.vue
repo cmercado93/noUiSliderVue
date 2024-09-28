@@ -110,8 +110,27 @@
             },
 
             tooltips: {
-                type: [Array, Object, Boolean],
+                type: [Array, Object, Boolean, Function],
                 default: false,
+                validator(v) {
+                    const validator = (v) => {
+                        if (typeof v == 'boolean' || typeof v == 'function') {
+                            return true;
+                        }
+
+                        if (typeof v == 'object' && Object.prototype.hasOwnProperty.call(v, 'to')) {
+                            return true;
+                        }
+
+                        return false;
+                    };
+
+                    if (Array.isArray(v)) {
+                        return v.every(validator);
+                    }
+
+                    return validator(v);
+                },
             },
 
             format: {
@@ -206,7 +225,7 @@
                     keyboardPageMultiplier: this.keyboardPageMultiplier,
                     keyboardMultiplier: this.keyboardMultiplier,
                     behaviour: this.behaviour,
-                    tooltips: this.tooltips,
+                    tooltips: this.normalizeTooltip(this.tooltips),
                     pips: this.pips,
                     snap: this.snap,
                     cssPrefix: this.cssPrefix,
@@ -247,6 +266,20 @@
                 for (let i = 0;i < l;i++) {
                     this.off(this.events.pop());
                 }
+            },
+
+            normalizeTooltip(v) {
+                if (typeof v == 'function') {
+                    return {
+                        to: v,
+                    }
+                }
+
+                if (Array.isArray(v)) {
+                    return v.map(this.normalizeTooltip);
+                }
+
+                return v;
             },
 
             // Events
