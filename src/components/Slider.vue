@@ -195,7 +195,7 @@
         mounted() {
             this.create();
 
-            this.startBasicEvents();
+            this.registerEvents();
         },
 
         beforeUnmount() {
@@ -282,12 +282,12 @@
             },
 
             // Events
-            startBasicEvents() {
+            registerEvents() {
                 generalEvents.map(event => {
-                    this.registerEvent(event);
+                    this.registerBasicEvent(event);
                 });
 
-                this.startUpdate();
+                this.regiterUpdateEvent();
             },
 
             offAllEvents() {
@@ -298,13 +298,13 @@
                 }
             },
 
-            registerEvent(eventName) {
+            registerBasicEvent(eventName) {
                 this.on(eventName, (values, handle, unencoded, tap, positions) => {
                     this.$emit(eventName, {values, handle, unencoded, tap, positions})
                 });
             },
 
-            startUpdate() {
+            regiterUpdateEvent() {
                 this.on('update', (values, handle, unencoded, tap, positions) => {
                     this.$emit('update', {values, handle, unencoded, tap, positions})
 
