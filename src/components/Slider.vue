@@ -188,6 +188,7 @@
         data() {
             return {
                 currentValues: null,
+                preHoverValue: null,
                 events: [],
             }
         },
@@ -287,6 +288,7 @@
                     this.registerBasicEvent(event);
                 });
 
+                this.regiterHoverEvent();
                 this.regiterUpdateEvent();
             },
 
@@ -313,6 +315,16 @@
                     this.currentValues = value;
 
                     this.$emit('update:modelValue', value);
+                });
+            },
+
+            regiterHoverEvent() {
+                this.on('hover', (value) => {
+                    if (value != this.preHoverValue) {
+                        this.preHoverValue = value;
+
+                        this.$emit('hover', value)
+                    }
                 });
             },
 
@@ -478,6 +490,7 @@
 
         emits: [
             ...generalEvents,
+            'hover',
             'update',
             'update:modelValue',
         ],
