@@ -145,7 +145,6 @@
 
             format: {
                 type: Object,
-                default: false,
                 validator(v) {
                     return Object.prototype.hasOwnProperty.call(v, 'to') && Object.prototype.hasOwnProperty.call(v, 'from');
                 },
