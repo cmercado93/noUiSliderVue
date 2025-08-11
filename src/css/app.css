@@ -1,0 +1,29 @@
+@import '~/nouislider/dist/nouislider.min.css';
+
+.slider-ui {
+    &.noUi-horizontal {
+        margin: 10px 0 45px 0;
+    }
+
+    &.noUi-vertical {
+        min-height: 160px;
+        height: 160px;
+    }
+
+    &.slider-ui-without-pips {
+        margin: 10px 0 10px 0;
+    }
+
+    .noUi-pips-horizontal {
+        height: auto;
+        height: 30px;
+
+        .noUi-value-horizontal {
+            transform: translate(-50%,80%);
+
+            &.noUi-value-large {
+                transform: translate(-50%,90%);
+            }
+        }
+    }
+}
