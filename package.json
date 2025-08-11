@@ -26,7 +26,10 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.6.2",
+    "autoprefixer": "^10.4.21",
     "nouislider": "^15.8.1",
+    "postcss": "^8.5.6",
+    "postcss-nested": "^7.0.2",
     "uglify-js": "^3.19.3",
     "vite": "^4.5.5",
     "vue": "^3.5.10"
@@ -50,7 +53,7 @@
   "bugs": {
     "url": "https://github.com/cmercado93/noUiSliderVue/issues"
   },
-  "homepage": "https://singlecode.net/docs/nouislider-vue",
+  "homepage": "https://nouislider-vue.singlecode.net",
   "files": [
     "dist",
     "README.md"
