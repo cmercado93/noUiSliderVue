@@ -3,20 +3,34 @@
         <table border="0">
             <tbody>
                 <tr>
-                    <td align="left"><button type="button" @click.prevent="slider_reset">Reset - fn()</button></td>
-                    <td align="left"><button type="button" @click.prevent="slider_showPips">{{pips_show ? 'Hide' : 'Shows'}} pips</button></td>
-                    <td align="left"><button type="button" @click.prevent="configs.disable = !configs.disable">{{configs.disable ? 'Enable' : 'Disable'}} slider</button></td>
-                    <td align="left"><button type="button" @click.prevent="configs.tooltips = !configs.tooltips">{{configs.tooltips ? 'Remove' : 'Add'}} tooltip</button></td>
+                    <td width="150" align="left">
+                        <button type="button" @click.prevent="slider_reset">Reset - fn()</button>
+                    </td>
+                    <td width="150" align="left">
+                        <button type="button" @click.prevent="slider_showPips">{{pips_show ? 'Hide' : 'Shows'}} pips</button>
+                    </td>
+                    <td width="150" align="left">
+                        <button type="button" @click.prevent="configs.disable = !configs.disable">{{configs.disable ? 'Enable' : 'Disable'}} slider</button>
+                    </td>
+                    <td width="150" align="left">
+                        <button type="button" @click.prevent="configs.tooltips = !configs.tooltips">{{configs.tooltips ? 'Remove' : 'Add'}} tooltip</button>
+                    </td>
                 </tr>
                 <tr>
-                    <td align="left"><button type="button" @click.prevent="slider_setValue">Set value</button></td>
-                    <td align="left"><button type="button" @click.prevent="slider_changePips">Change pips</button></td>
+                    <td align="left">
+                        <button type="button" @click.prevent="slider_setValue">Set value</button>
+                    </td>
+                    <td align="left">
+                        <button type="button" @click.prevent="slider_changePips">Change pips</button>
+                    </td>
                     <td align="left">&nbsp;</td>
                     <td align="left">&nbsp;</td>
                 </tr>
                 <tr>
                     <td align="left">&nbsp;</td>
-                    <td align="left"><button type="button" @click.prevent="slider_removePips">Remove pips - fn()</button></td>
+                    <td align="left">
+                        <button type="button" @click.prevent="slider_removePips">Remove pips - fn()</button>
+                    </td>
                     <td align="left">&nbsp;</td>
                     <td align="left">&nbsp;</td>
                 </tr>
