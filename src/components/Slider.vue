@@ -253,6 +253,14 @@
                     configs['format'] = this.format;
                 }
 
+                if (this.tooltips) {
+                    configs['tooltips'] = this.normalizeTooltip(this.tooltips);
+                }
+
+                if (this.pips) {
+                    configs['pips'] = this.pips;
+                }
+
                 if (this.pipsys != undefined && !configs['pips']) {
                     configs['pips'] = {
                         mode: 'steps',
@@ -262,12 +270,6 @@
                 noUiSlider.create(this.el, configs);
 
                 this.$nextTick(() => {
-                    if (this.tooltips) {
-                        this.updateOptions({
-                            tooltips: this.normalizeTooltip(this.tooltips),
-                        });
-                    }
-
                     if (this.pips) {
                         this.setPips(this.pips);
                     } else {
@@ -456,9 +458,10 @@
 
             pips: {
                 handler(v) {
-                    this.removePips();
-
-                    this.$nextTick(() => this.setPips(v));
+                    this.updateOptions({
+                        pips: v,
+                        tooltips: this.tooltips,
+                    });
                 },
                 deep: true,
             },
@@ -501,6 +504,7 @@
             tooltips(v) {
                 this.updateOptions({
                     tooltips: v,
+                    pips: this.pips,
                 });
             },
 
