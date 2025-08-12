@@ -19,7 +19,7 @@
             id: {
                 type: String,
                 default: () => {
-                    return "slider-" + ((Math.random() + 1).toString(36).substring(7));
+                    return 'slider-' + ((Math.random() + 1).toString(36).substring(7));
                 },
             },
 
@@ -27,7 +27,7 @@
                 type: [Array, Number],
                 validator(v) {
                     if (Array.isArray(v)) {
-                        return v.length && v.every(i => typeof i == "number");
+                        return v.length && v.every(i => typeof i == 'number');
                     }
 
                     return true;
@@ -39,7 +39,7 @@
                 default: false,
                 validator(v) {
                     if (Array.isArray(v)) {
-                        return v.length && v.every(i => typeof i == "boolean");
+                        return v.length && v.every(i => typeof i == 'boolean');
                     }
 
                     return true;
@@ -63,7 +63,7 @@
                 type: [Array, Number],
                 validator(v) {
                     if (Array.isArray(v)) {
-                        return v.length && v.every(i => typeof i == "number");
+                        return v.length && v.every(i => typeof i == 'number');
                     }
 
                     return true;
@@ -82,7 +82,7 @@
 
             orientation: {
                 type: String,
-                default: "horizontal",
+                default: 'horizontal',
             },
 
             animate: {
@@ -431,7 +431,7 @@
                     return;
                 }
 
-                this.el.noUiSlider.target.classList.add("slider-ui-without-pips");
+                this.el.noUiSlider.target.classList.add('slider-ui-without-pips');
             },
 
             removeCssWithoutPips() {
@@ -439,7 +439,7 @@
                     return;
                 }
 
-                this.el.noUiSlider.target.classList.remove("slider-ui-without-pips");
+                this.el.noUiSlider.target.classList.remove('slider-ui-without-pips');
             },
         },
 
