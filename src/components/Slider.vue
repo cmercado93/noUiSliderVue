@@ -198,7 +198,6 @@
         },
 
         mounted() {
-            window.lll = this;
             this.create();
 
             this.registerEvents();
