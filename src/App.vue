@@ -1,5 +1,44 @@
 <template>
     <div class="base">
+        <table border="0">
+            <tbody>
+                <tr>
+                    <td width="150" align="left">
+                        <button type="button" @click.prevent="slider_showPips">{{pips_show ? 'Hide' : 'Shows'}} pips</button>
+                    </td>
+                    <td width="150" align="left">
+                        <button type="button" @click.prevent="slider_reset">Reset - fn()</button>
+                    </td>
+                    <td width="150" align="left">
+                        <button type="button" @click.prevent="configs.disable = !configs.disable">{{configs.disable ? 'Enable' : 'Disable'}} slider</button>
+                    </td>
+                    <td width="150" align="left">
+                        <button type="button" @click.prevent="configs.tooltips = !configs.tooltips">{{configs.tooltips ? 'Remove' : 'Add'}} tooltip</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left">
+                        <button type="button" @click.prevent="slider_changePips">Change pips</button>
+                    </td>
+                    <td align="left">
+                        <button type="button" @click.prevent="slider_setValue">Set value</button>
+                    </td>
+                    <td align="left">&nbsp;</td>
+                    <td align="left">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td align="left">
+                        <button type="button" @click.prevent="slider_removePips">Remove pips - fn()</button>
+                    </td>
+                    <td align="left">&nbsp;</td>
+                    <td align="left">&nbsp;</td>
+                    <td align="left">&nbsp;</td>
+                </tr>
+            </tbody>
+        </table>
+        <hr>
+        <br>
+        <p>Current data: {{values}}</p>
         <v-slider
             v-model="values"
             :start="configs.start"
@@ -7,26 +46,18 @@
             :tooltips="configs.tooltips"
             :connect="configs.connect"
             :range="configs.range"
-            :pips="configs.pips"
+            :pips="pips_config"
             :disable="configs.disable"
             ref="slider"
         ></v-slider>
-        <div style="margin-top: 50px;"></div>
-        <p>Current data: {{values}}</p>
-        <br>
-        <button type="button" @click.prevent="slider_reset">Reset</button>
-        <br>
-        <button type="button" @click.prevent="slider_setValue">Set value</button>
-        <br>
-        <button type="button" @click.prevent="slider_changePips">Change pips</button>
-        <br>
-        <button type="button" @click.prevent="slider_removePips">Remove pips</button>
-        <br>
-        <button type="button" @click.prevent="configs.disable = !configs.disable">{{configs.disable ? 'Enable' : 'Disable'}} slider</button>
-        <br>
-        <button type="button" @click.prevent="configs.tooltips = !configs.tooltips">{{configs.tooltips ? 'Remove' : 'Add'}} tooltip</button>
     </div>
 </template>
+<style>
+    table button {
+        margin: 0;
+        width: 100%;
+    }
+</style>
 <script>
     import VSlider from './components/';
 
@@ -37,11 +68,12 @@
 
         data() {
             return {
+                pips_show: true,
                 pips_mode: true,
                 values: null,
                 configs: {
                     disable: false,
-                    tooltips: false,
+                    tooltips: true,
                     start: null,
                     step: 1,
                     connect: "lower",
@@ -51,7 +83,7 @@
                     },
                     pips: {
                         mode: 'steps',
-                        density: 10,
+                        density: 1,
                         format: {
                             to: (value) => {
                                 return value + " value";
@@ -65,6 +97,16 @@
             }
         },
 
+        computed: {
+            pips_config() {
+                if (this.pips_show) {
+                    return this.configs.pips;
+                }
+
+                return null;
+            },
+        },
+
         methods: {
             slider_reset() {
                 this.$refs.slider.reset();
@@ -72,6 +114,10 @@
 
             slider_setValue() {
                 this.values = 5;
+            },
+
+            slider_showPips() {
+                this.pips_show = !this.pips_show;
             },
 
             slider_changePips() {
@@ -89,6 +135,7 @@
             },
 
             slider_removePips() {
+                this.pips_show = false;
                 this.$refs.slider.removePips();
             },
         }
