@@ -26,7 +26,7 @@
             start: {
                 type: [Array, Number],
                 validator(v) {
-                    if (typeof v == "object") {
+                    if (Array.isArray(v)) {
                         return v.length && v.every(i => typeof i == "number");
                     }
 
@@ -38,7 +38,7 @@
                 type: [Array, Boolean, String],
                 default: false,
                 validator(v) {
-                    if (typeof v == "object") {
+                    if (Array.isArray(v)) {
                         return v.length && v.every(i => typeof i == "boolean");
                     }
 
@@ -62,7 +62,7 @@
             padding: {
                 type: [Array, Number],
                 validator(v) {
-                    if (typeof v == "object") {
+                    if (Array.isArray(v)) {
                         return v.length && v.every(i => typeof i == "number");
                     }
 
@@ -293,10 +293,8 @@
             },
 
             compareValues(v1, v2) {
-                v1 = JSON.stringify(v1);
-                v2 = JSON.stringify(v2);
-
-                return v1 == v2;
+                const toNorm = (v) => Array.isArray(v) ? v.map(String) : String(v);
+                return JSON.stringify(toNorm(v1)) === JSON.stringify(toNorm(v2));
             },
 
             // Events
@@ -329,6 +327,10 @@
 
                     let value = values.length > 1 ? values : values[0];
 
+                    if (!this.format) {
+                        value = Array.isArray(value) ? value.map(Number) : Number(value);
+                    }
+
                     this.currentValues = value;
 
                     this.$emit('update:modelValue', value);
@@ -349,7 +351,9 @@
             destroy() {
                 this.offAllEvents();
 
-                this.el.noUiSlider.destroy();
+                if (this.el?.noUiSlider) {
+                    this.el.noUiSlider.destroy();
+                }
             },
 
             getSteps() {
@@ -390,7 +394,6 @@
             },
 
             updateOptions(optionsToUpdate, fireSetEvent) {
-                console.log('updateOptions', optionsToUpdate, fireSetEvent)
                 this.el.noUiSlider.updateOptions(optionsToUpdate, fireSetEvent);
             },
 
@@ -458,10 +461,9 @@
 
             pips: {
                 handler(v) {
-                    this.updateOptions({
-                        pips: v,
-                        tooltips: this.tooltips,
-                    });
+                    this.removePips();
+
+                    this.$nextTick(() => this.setPips(v));
                 },
                 deep: true,
             },
