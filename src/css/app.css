@@ -1,6 +1,6 @@
 @import '~/nouislider/dist/nouislider.min.css';
 
-.slider-ui {
+.noUi-slider-x {
     &.noUi-horizontal {
         margin: 10px 0 45px 0;
     }
@@ -10,7 +10,7 @@
         height: 160px;
     }
 
-    &.slider-ui-without-pips {
+    &.noUi-slider-x-without-pips {
         margin: 10px 0 10px 0;
     }
 

@@ -6,7 +6,7 @@ Este cuenta con la configuración básica que brinda el complemento original.
 
 ## Documentación
 
-Documentación que incluye ejemplos, opciones y detalles de configuración, está disponible aquí: [Documentación](https://singlecode.net/docs/nouislider-vue/installation)
+Documentación que incluye ejemplos, opciones y detalles de configuración, está disponible aquí: [Documentación](https://nouislider-vue.singlecode.net/installation)
 
 ## Licencia
 Distribuido bajo la licencia MIT. Vea `LICENSE.md` para más información.
