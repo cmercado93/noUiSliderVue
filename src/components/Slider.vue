@@ -267,14 +267,6 @@
                 }
 
                 noUiSlider.create(this.el, configs);
-
-                this.$nextTick(() => {
-                    if (this.pips) {
-                        this.setPips(this.pips);
-                    } else {
-                        this.removePips();
-                    }
-                })
             },
 
             normalizeTooltip(v) {
@@ -325,10 +317,6 @@
                     this.$emit('update', {values, handle, unencoded, tap, positions})
 
                     let value = values.length > 1 ? values : values[0];
-
-                    if (!this.format) {
-                        value = Array.isArray(value) ? value.map(Number) : Number(value);
-                    }
 
                     this.currentValues = value;
 
@@ -535,7 +523,6 @@
             'hover',
             'update',
             'update:modelValue',
-            'update:model-value',
         ],
 
         expose: [
