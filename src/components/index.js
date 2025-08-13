@@ -1,5 +1,5 @@
 import Slider from './Slider.vue';
 
-import '~/nouislider/dist/nouislider.min.css';
+import '-/css/app.css';
 
 export default Slider

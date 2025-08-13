@@ -1,5 +1,5 @@
 <template>
-    <div :id="id" :ref="id" class="slider-ui"></div>
+    <div :id="id" :ref="id" class="noUi-slider-x"></div>
 </template>
 <script>
     import noUiSlider from 'nouislider';
@@ -19,15 +19,15 @@
             id: {
                 type: String,
                 default: () => {
-                    return "slider-" + ((Math.random() + 1).toString(36).substring(7));
+                    return 'noUi-slider-x-' + ((Math.random() + 1).toString(36).substring(7));
                 },
             },
 
             start: {
                 type: [Array, Number],
                 validator(v) {
-                    if (typeof v == "object") {
-                        return v.length && v.every(i => typeof i == "number");
+                    if (Array.isArray(v)) {
+                        return v.length && v.every(i => typeof i == 'number');
                     }
 
                     return true;
@@ -38,8 +38,8 @@
                 type: [Array, Boolean, String],
                 default: false,
                 validator(v) {
-                    if (typeof v == "object") {
-                        return v.length && v.every(i => typeof i == "boolean");
+                    if (Array.isArray(v)) {
+                        return v.length && v.every(i => typeof i == 'boolean');
                     }
 
                     return true;
@@ -62,8 +62,8 @@
             padding: {
                 type: [Array, Number],
                 validator(v) {
-                    if (typeof v == "object") {
-                        return v.length && v.every(i => typeof i == "number");
+                    if (Array.isArray(v)) {
+                        return v.length && v.every(i => typeof i == 'number');
                     }
 
                     return true;
@@ -82,7 +82,7 @@
 
             orientation: {
                 type: String,
-                default: "horizontal",
+                default: 'horizontal',
             },
 
             animate: {
@@ -193,6 +193,7 @@
                 currentValues: null,
                 preHoverValue: null,
                 events: [],
+                el: null,
             }
         },
 
@@ -207,11 +208,9 @@
         },
 
         methods: {
-            getReference() {
-                return this.$refs[this.id];
-            },
-
             create() {
+                this.el = this.$refs[this.id];
+
                 let start = this.modelValue;
 
                 if (this.start !== undefined && this.start !== null) {
@@ -239,8 +238,6 @@
                     keyboardPageMultiplier: this.keyboardPageMultiplier,
                     keyboardMultiplier: this.keyboardMultiplier,
                     behaviour: this.behaviour,
-                    tooltips: this.normalizeTooltip(this.tooltips),
-                    pips: this.pips,
                     snap: this.snap,
                     cssPrefix: this.cssPrefix,
                     cssClasses: this.cssClasses,
@@ -255,13 +252,27 @@
                     configs['format'] = this.format;
                 }
 
+                if (this.tooltips) {
+                    configs['tooltips'] = this.normalizeTooltip(this.tooltips);
+                }
+
+                if (this.pips) {
+                    configs['pips'] = this.pips;
+                }
+
                 if (this.pipsys != undefined && !configs['pips']) {
                     configs['pips'] = {
                         mode: 'steps',
                     };
                 }
 
-                noUiSlider.create(this.getReference(), configs);
+                noUiSlider.create(this.el, configs);
+
+                this.$nextTick(() => {
+                    if (!this.pips) {
+                        this.setCssWithoutPips();
+                    }
+                });
             },
 
             normalizeTooltip(v) {
@@ -279,10 +290,8 @@
             },
 
             compareValues(v1, v2) {
-                v1 = JSON.stringify(v1);
-                v2 = JSON.stringify(v2);
-
-                return v1 == v2;
+                const toNorm = (v) => Array.isArray(v) ? v.map(String) : String(v);
+                return JSON.stringify(toNorm(v1)) === JSON.stringify(toNorm(v2));
             },
 
             // Events
@@ -335,72 +344,95 @@
             destroy() {
                 this.offAllEvents();
 
-                this.getReference().noUiSlider.destroy();
+                if (this.el?.noUiSlider) {
+                    this.el.noUiSlider.destroy();
+                }
             },
 
             getSteps() {
-                return this.getReference().noUiSlider.steps();
+                return this.el.noUiSlider.steps();
             },
 
             on(eventName, callback) {
                 this.events.push(eventName);
-                this.getReference().noUiSlider.on(eventName, callback);
+                this.el.noUiSlider.on(eventName, callback);
             },
 
             off(eventName) {
-                this.getReference().noUiSlider.off(eventName);
+                this.el.noUiSlider.off(eventName);
             },
 
             get(unencoded) {
-                return this.getReference().noUiSlider.get(unencoded);
+                return this.el.noUiSlider.get(unencoded);
             },
 
             set(input, fireSetEvent, exactInput) {
-                this.getReference().noUiSlider.set(input, fireSetEvent, exactInput);
+                this.el.noUiSlider.set(input, fireSetEvent, exactInput);
             },
 
             setHandle(handleNumber, value, fireSetEvent, exactInput) {
-                this.getReference().noUiSlider.setHandle(handleNumber, value, fireSetEvent, exactInput);
+                this.el.noUiSlider.setHandle(handleNumber, value, fireSetEvent, exactInput);
             },
 
             reset(fireSetEvent) {
-                this.getReference().noUiSlider.reset(fireSetEvent);
+                this.el.noUiSlider.reset(fireSetEvent);
             },
 
             setDisable(handleNumber) {
-                this.getReference().noUiSlider.disable(handleNumber);
+                this.el.noUiSlider.disable(handleNumber);
             },
 
             setEnable(handleNumber) {
-                this.getReference().noUiSlider.enable(handleNumber);
+                this.el.noUiSlider.enable(handleNumber);
             },
 
             updateOptions(optionsToUpdate, fireSetEvent) {
-                this.getReference().noUiSlider.updateOptions(optionsToUpdate, fireSetEvent);
+                this.el.noUiSlider.updateOptions(optionsToUpdate, fireSetEvent);
             },
 
             removePips() {
-                this.getReference().noUiSlider.removePips();
+                this.setCssWithoutPips();
+
+                this.el.noUiSlider.removePips();
             },
 
             removeTooltips() {
-                this.getReference().noUiSlider.removeTooltips();
+                this.el.noUiSlider.removeTooltips();
             },
 
             getPositions() {
-                return this.getReference().noUiSlider.getPositions();
+                return this.el.noUiSlider.getPositions();
             },
 
             getTooltips() {
-                return this.getReference().noUiSlider.getTooltips();
+                return this.el.noUiSlider.getTooltips();
             },
 
             getOrigins() {
-                return this.getReference().noUiSlider.getOrigins();
+                return this.el.noUiSlider.getOrigins();
             },
 
             setPips(grid) {
-                return this.getReference().noUiSlider.pips(grid);
+                if (grid) {
+                    this.removeCssWithoutPips();
+                    return this.el.noUiSlider.pips(grid);
+                }
+            },
+
+            setCssWithoutPips() {
+                if (!this.el) {
+                    return;
+                }
+
+                this.el.noUiSlider.target.classList.add('noUi-slider-x-without-pips');
+            },
+
+            removeCssWithoutPips() {
+                if (!this.el) {
+                    return;
+                }
+
+                this.el.noUiSlider.target.classList.remove('noUi-slider-x-without-pips');
             },
         },
 
@@ -467,6 +499,7 @@
             tooltips(v) {
                 this.updateOptions({
                     tooltips: v,
+                    pips: this.pips,
                 });
             },
 
