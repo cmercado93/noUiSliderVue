@@ -1,5 +1,5 @@
 <template>
-    <div :id="id" :ref="id" class="slider-ui"></div>
+    <div :id="id" :ref="id" class="noUi-slider-x"></div>
 </template>
 <script>
     import noUiSlider from 'nouislider';
@@ -19,7 +19,7 @@
             id: {
                 type: String,
                 default: () => {
-                    return 'slider-' + ((Math.random() + 1).toString(36).substring(7));
+                    return 'noUi-slider-x-' + ((Math.random() + 1).toString(36).substring(7));
                 },
             },
 
@@ -267,6 +267,12 @@
                 }
 
                 noUiSlider.create(this.el, configs);
+
+                this.$nextTick(() => {
+                    if (!this.pips) {
+                        this.setCssWithoutPips();
+                    }
+                });
             },
 
             normalizeTooltip(v) {
@@ -418,7 +424,7 @@
                     return;
                 }
 
-                this.el.noUiSlider.target.classList.add('slider-ui-without-pips');
+                this.el.noUiSlider.target.classList.add('noUi-slider-x-without-pips');
             },
 
             removeCssWithoutPips() {
@@ -426,7 +432,7 @@
                     return;
                 }
 
-                this.el.noUiSlider.target.classList.remove('slider-ui-without-pips');
+                this.el.noUiSlider.target.classList.remove('noUi-slider-x-without-pips');
             },
         },
 
