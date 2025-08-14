@@ -59,7 +59,7 @@
     }
 </style>
 <script>
-    import VSlider from './components/';
+    import VSlider from '-/components/Slider.vue';
 
     export default {
         components: {

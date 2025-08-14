@@ -11,7 +11,7 @@ export default defineConfig({
     },
     build: {
         lib: {
-            entry: resolve(__dirname, 'src/components/index.js'),
+            entry: resolve(__dirname, 'src/components/app.js'),
             name: 'noUiSliderVue',
             fileName: 'nouislider-vue3',
             formats: ['es', 'umd'],
