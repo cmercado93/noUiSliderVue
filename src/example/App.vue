@@ -48,6 +48,9 @@
             :range="configs.range"
             :pips="pips_config"
             :disable="configs.disable"
+            pip-click
+            clickable-pips
+            tooltip-on-click
             ref="slider"
         ></v-slider>
     </div>
@@ -126,7 +129,7 @@
                     this.configs.pips.mode = 'range';
                     this.configs.pips.format.to = (v) => v + " sec";
                 } else {
-                    this.configs.pips.density = 10;
+                    this.configs.pips.density = 1;
                     this.configs.pips.mode = 'steps';
                     this.configs.pips.format.to = (v) => v + " value";
                 }

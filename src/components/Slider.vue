@@ -1,5 +1,10 @@
 <template>
-    <div :id="id" :ref="id" class="noUi-slider-x"></div>
+    <div
+        :id="id"
+        :ref="id"
+        class="noUi-slider-x"
+        :class="{'noUi-slider-x-toggle-tooltip': tooltipOnClick !== undefined}"
+    ></div>
 </template>
 <script>
     import noUiSlider from 'nouislider';
@@ -157,6 +162,10 @@
 
             pipsys: {},
 
+            clickablePips: {},
+
+            tooltipOnClick: {},
+
             snap: {
                 type: Boolean,
             },
@@ -256,10 +265,6 @@
                     configs['tooltips'] = this.normalizeTooltip(this.tooltips);
                 }
 
-                if (this.pips) {
-                    configs['pips'] = this.pips;
-                }
-
                 if (this.pipsys != undefined && !configs['pips']) {
                     configs['pips'] = {
                         mode: 'steps',
@@ -271,6 +276,8 @@
                 this.$nextTick(() => {
                     if (!this.pips) {
                         this.setCssWithoutPips();
+                    } else {
+                        this.setPips(this.pips);
                     }
                 });
             },
@@ -415,6 +422,11 @@
             setPips(grid) {
                 if (grid) {
                     this.removeCssWithoutPips();
+
+                    if (this.clickablePips !== undefined) {
+                        this.setClickablePips();
+                    }
+
                     return this.el.noUiSlider.pips(grid);
                 }
             },
@@ -433,6 +445,22 @@
                 }
 
                 this.el.noUiSlider.target.classList.remove('noUi-slider-x-without-pips');
+            },
+
+            setClickablePips() {
+                const func = (e) => {
+                    if (e.target.dataset.value !== undefined) {
+                        this.set(e.target.dataset.value);
+                    }
+                };
+                const mode = this.pips.mode;
+
+                this.$nextTick(() => {
+                    this.el.querySelectorAll(".noUi-pips .noUi-value").forEach(el => {
+                        el.addEventListener('click', func);
+                        el.style.cursor = 'pointer';
+                    });
+                });
             },
         },
 
@@ -552,3 +580,12 @@
         ],
     }
 </script>
+<style scoped>
+    .noUi-slider-x.noUi-slider-x-toggle-tooltip :deep(.noUi-tooltip) {
+        display: none;
+    }
+
+    .noUi-slider-x.noUi-slider-x-toggle-tooltip :deep(.noUi-active .noUi-tooltip) {
+        display: block;
+    }
+</style>
