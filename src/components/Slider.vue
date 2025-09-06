@@ -1,13 +1,14 @@
 <template>
     <div
-        :id="id"
-        :ref="id"
+        ref="el"
         class="noUi-slider-x"
         :class="{'noUi-slider-x-toggle-tooltip': tooltipOnClick !== undefined}"
     ></div>
 </template>
 <script>
     import noUiSlider from 'nouislider';
+
+    import mergeTooltips from '-/scripts/mergeTooltips.js';
 
     // Lista general de eventos de nouislider
     const generalEvents = [
@@ -166,6 +167,18 @@
 
             tooltipOnClick: {},
 
+            mergeTooltips: {
+                default: null,
+                type: Object,
+                validator(v) {
+                    if (typeof v != "object") {
+                        return false;
+                    }
+
+                    return Object.prototype.hasOwnProperty.call(v, 'threshold') || Object.prototype.hasOwnProperty.call(v, 'separator');
+                },
+            },
+
             snap: {
                 type: Boolean,
             },
@@ -218,7 +231,7 @@
 
         methods: {
             create() {
-                this.el = this.$refs[this.id];
+                this.el = this.$refs['el'];
 
                 let start = this.modelValue;
 
@@ -279,6 +292,8 @@
                     } else {
                         this.setPips(this.pips);
                     }
+
+                    this.setMergeTooltips();
                 });
             },
 
@@ -462,6 +477,17 @@
                     });
                 });
             },
+
+            setMergeTooltips() {
+                if (this.mergeTooltips === null) {
+                    return;
+                }
+
+                const threshold = this.mergeTooltips?.threshold || 15;
+                const separator = this.mergeTooltips?.separator || ' - ';
+
+                mergeTooltips(this.el, threshold, separator);
+            },
         },
 
         watch: {
@@ -580,7 +606,7 @@
         ],
     }
 </script>
-<style scoped>
+<style>
     .noUi-slider-x.noUi-slider-x-toggle-tooltip :deep(.noUi-tooltip) {
         display: none;
     }

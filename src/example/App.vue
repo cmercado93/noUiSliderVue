@@ -50,7 +50,7 @@
             :disable="configs.disable"
             pip-click
             clickable-pips
-            tooltip-on-click
+            :merge-tooltips="{threshold: 15, separator: '-'}"
             ref="slider"
         ></v-slider>
     </div>
@@ -74,12 +74,13 @@
                 pips_show: true,
                 pips_mode: true,
                 values: null,
+                values2: null,
                 configs: {
                     disable: false,
                     tooltips: true,
-                    start: null,
+                    connect: true,
+                    start: [2, 8],
                     step: 1,
-                    connect: "lower",
                     range: {
                         min: 1,
                         max: 10,
