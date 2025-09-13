@@ -48,6 +48,9 @@
             :range="configs.range"
             :pips="pips_config"
             :disable="configs.disable"
+            pip-click
+            clickable-pips
+            :merge-tooltips="{threshold: 15, separator: '-'}"
             ref="slider"
         ></v-slider>
     </div>
@@ -59,7 +62,7 @@
     }
 </style>
 <script>
-    import VSlider from './components/';
+    import VSlider from '-/components/Slider.vue';
 
     export default {
         components: {
@@ -71,12 +74,13 @@
                 pips_show: true,
                 pips_mode: true,
                 values: null,
+                values2: null,
                 configs: {
                     disable: false,
                     tooltips: true,
-                    start: null,
+                    connect: true,
+                    start: [2, 8],
                     step: 1,
-                    connect: "lower",
                     range: {
                         min: 1,
                         max: 10,
@@ -126,7 +130,7 @@
                     this.configs.pips.mode = 'range';
                     this.configs.pips.format.to = (v) => v + " sec";
                 } else {
-                    this.configs.pips.density = 10;
+                    this.configs.pips.density = 1;
                     this.configs.pips.mode = 'steps';
                     this.configs.pips.format.to = (v) => v + " value";
                 }
