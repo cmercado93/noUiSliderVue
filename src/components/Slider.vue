@@ -195,7 +195,7 @@
 
             modelValue: {
                 required: true,
-                type: [Number, Array, null],
+                type: [Number, Array, String, null],
             },
 
             cssPrefix: {
@@ -511,7 +511,7 @@
 
                 this.removeCssWithoutPips();
 
-                if (this.clickablePips !== undefined) {
+                if (this.clickablePips) {
                     this.setClickablePips();
                 }
 
@@ -657,6 +657,8 @@
                 this.scheduleUpdate({
                     tooltips: this.normalizeTooltip(v),
                 });
+
+                this.$nextTick(() => this.setMergeTooltips());
             },
 
             format: {
