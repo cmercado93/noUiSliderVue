@@ -22,18 +22,11 @@
 
     export default {
         props: {
-            id: {
-                type: String,
-                default: () => {
-                    return 'noUi-slider-x-' + ((Math.random() + 1).toString(36).substring(7));
-                },
-            },
-
             start: {
                 type: [Array, Number],
                 validator(v) {
                     if (Array.isArray(v)) {
-                        return v.length && v.every(i => typeof i == 'number');
+                        return v.length && v.every(i => typeof i === 'number');
                     }
 
                     return true;
@@ -45,7 +38,7 @@
                 default: false,
                 validator(v) {
                     if (Array.isArray(v)) {
-                        return v.length && v.every(i => typeof i == 'boolean');
+                        return v.length && v.every(i => typeof i === 'boolean');
                     }
 
                     return true;
@@ -69,7 +62,7 @@
                 type: [Array, Number],
                 validator(v) {
                     if (Array.isArray(v)) {
-                        return v.length && v.every(i => typeof i == 'number');
+                        return v.length && v.every(i => typeof i === 'number');
                     }
 
                     return true;
@@ -129,12 +122,12 @@
                 type: [Array, Object, Boolean, Function],
                 default: false,
                 validator(v) {
-                    const validator = (v) => {
-                        if (typeof v == 'boolean' || typeof v == 'function') {
+                    const validateSingle = (item) => {
+                        if (typeof item === 'boolean' || typeof item === 'function') {
                             return true;
                         }
 
-                        if (typeof v == 'object' && Object.prototype.hasOwnProperty.call(v, 'to')) {
+                        if (item && typeof item === 'object' && 'to' in item) {
                             return true;
                         }
 
@@ -142,10 +135,10 @@
                     };
 
                     if (Array.isArray(v)) {
-                        return v.every(validator);
+                        return v.every(validateSingle);
                     }
 
-                    return validator(v);
+                    return validateSingle(v);
                 },
             },
 
@@ -161,17 +154,30 @@
                 default: null,
             },
 
-            pipsys: {},
+            pipsys: {
+                type: Boolean,
+                default: undefined,
+            },
 
-            clickablePips: {},
+            clickablePips: {
+                type: Boolean,
+                default: undefined,
+            },
 
-            tooltipOnClick: {},
+            tooltipOnClick: {
+                type: Boolean,
+                default: undefined,
+            },
 
             mergeTooltips: {
                 default: null,
                 type: Object,
                 validator(v) {
-                    if (typeof v != "object") {
+                    if (v === null) {
+                        return true;
+                    }
+
+                    if (typeof v !== "object") {
                         return false;
                     }
 
@@ -212,10 +218,12 @@
 
         data() {
             return {
-                currentValues: null,
                 preHoverValue: null,
                 events: [],
                 el: null,
+                clickablePipsListeners: [],
+                pendingUpdates: null,
+                updateScheduled: false,
             }
         },
 
@@ -239,7 +247,7 @@
                     start = this.start;
                 }
 
-                if (start == null) {
+                if (start === null) {
                     start = Object.values(this.range)[0];
                 }
 
@@ -278,7 +286,7 @@
                     configs['tooltips'] = this.normalizeTooltip(this.tooltips);
                 }
 
-                if (this.pipsys != undefined && !configs['pips']) {
+                if (this.pipsys !== undefined && !configs['pips']) {
                     configs['pips'] = {
                         mode: 'steps',
                     };
@@ -298,40 +306,42 @@
             },
 
             normalizeTooltip(v) {
-                if (typeof v == 'function') {
+                if (typeof v === 'function') {
                     return {
                         to: v,
                     }
                 }
 
                 if (Array.isArray(v)) {
-                    return v.map(this.normalizeTooltip);
+                    return v.map(item => this.normalizeTooltip(item));
                 }
 
                 return v;
             },
 
             compareValues(v1, v2) {
+                // Manejar null/undefined primero
+                if (v1 === v2) return true;
+                if (v1 == null || v2 == null) return false;
+
                 const toNorm = (v) => Array.isArray(v) ? v.map(String) : String(v);
                 return JSON.stringify(toNorm(v1)) === JSON.stringify(toNorm(v2));
             },
 
             // Events
             registerEvents() {
-                generalEvents.map(event => {
+                generalEvents.forEach(event => {
                     this.registerBasicEvent(event);
                 });
 
-                this.regiterHoverEvent();
-                this.regiterUpdateEvent();
+                this.registerHoverEvent();
+                this.registerUpdateEvent();
             },
 
             offAllEvents() {
-                let l = this.events.length;
-
-                for (let i = 0;i < l;i++) {
-                    this.off(this.events.pop());
-                }
+                const uniqueEvents = [...new Set(this.events)];
+                uniqueEvents.forEach(event => this.off(event));
+                this.events = [];
             },
 
             registerBasicEvent(eventName) {
@@ -340,21 +350,19 @@
                 });
             },
 
-            regiterUpdateEvent() {
+            registerUpdateEvent() {
                 this.on('update', (values, handle, unencoded, tap, positions) => {
                     this.$emit('update', {values, handle, unencoded, tap, positions})
 
                     let value = values.length > 1 ? values : values[0];
 
-                    this.currentValues = value;
-
                     this.$emit('update:modelValue', value);
                 });
             },
 
-            regiterHoverEvent() {
+            registerHoverEvent() {
                 this.on('hover', (value) => {
-                    if (value != this.preHoverValue) {
+                    if (value !== this.preHoverValue) {
                         this.preHoverValue = value;
 
                         this.$emit('hover', value)
@@ -365,89 +373,153 @@
             // Public methods
             destroy() {
                 this.offAllEvents();
+                this.removeClickablePipsListeners();
 
-                if (this.el?.noUiSlider) {
+                if (this.isSliderReady()) {
                     this.el.noUiSlider.destroy();
+                    this.el.noUiSlider = null;
                 }
             },
 
             getSteps() {
+                if (!this.isSliderReady()) {
+                    return null;
+                }
+
                 return this.el.noUiSlider.steps();
             },
 
             on(eventName, callback) {
+                if (!this.isSliderReady()) {
+                    return;
+                }
+
                 this.events.push(eventName);
                 this.el.noUiSlider.on(eventName, callback);
             },
 
             off(eventName) {
+                if (!this.isSliderReady()) {
+                    return;
+                }
+
                 this.el.noUiSlider.off(eventName);
             },
 
             get(unencoded) {
+                if (!this.isSliderReady()) {
+                    return null;
+                }
+
                 return this.el.noUiSlider.get(unencoded);
             },
 
             set(input, fireSetEvent, exactInput) {
+                if (!this.isSliderReady()) {
+                    return;
+                }
+
                 this.el.noUiSlider.set(input, fireSetEvent, exactInput);
             },
 
             setHandle(handleNumber, value, fireSetEvent, exactInput) {
+                if (!this.isSliderReady()) {
+                    return;
+                }
+
                 this.el.noUiSlider.setHandle(handleNumber, value, fireSetEvent, exactInput);
             },
 
             reset(fireSetEvent) {
+                if (!this.isSliderReady()) {
+                    return;
+                }
+
                 this.el.noUiSlider.reset(fireSetEvent);
             },
 
             setDisable(handleNumber) {
+                if (!this.isSliderReady()) {
+                    return;
+                }
+
                 this.el.noUiSlider.disable(handleNumber);
             },
 
             setEnable(handleNumber) {
+                if (!this.isSliderReady()) {
+                    return;
+                }
+
                 this.el.noUiSlider.enable(handleNumber);
             },
 
             updateOptions(optionsToUpdate, fireSetEvent) {
+                if (!this.isSliderReady()) {
+                    return;
+                }
+
                 this.el.noUiSlider.updateOptions(optionsToUpdate, fireSetEvent);
             },
 
             removePips() {
+                if (!this.isSliderReady()) {
+                    return;
+                }
+
                 this.setCssWithoutPips();
 
                 this.el.noUiSlider.removePips();
             },
 
             removeTooltips() {
+                if (!this.isSliderReady()) {
+                    return;
+                }
+
                 this.el.noUiSlider.removeTooltips();
             },
 
             getPositions() {
+                if (!this.isSliderReady()) {
+                    return null;
+                }
+
                 return this.el.noUiSlider.getPositions();
             },
 
             getTooltips() {
+                if (!this.isSliderReady()) {
+                    return null;
+                }
+
                 return this.el.noUiSlider.getTooltips();
             },
 
             getOrigins() {
+                if (!this.isSliderReady()) {
+                    return null;
+                }
+
                 return this.el.noUiSlider.getOrigins();
             },
 
             setPips(grid) {
-                if (grid) {
-                    this.removeCssWithoutPips();
-
-                    if (this.clickablePips !== undefined) {
-                        this.setClickablePips();
-                    }
-
-                    return this.el.noUiSlider.pips(grid);
+                if (!grid || !this.isSliderReady()) {
+                    return;
                 }
+
+                this.removeCssWithoutPips();
+
+                if (this.clickablePips) {
+                    this.setClickablePips();
+                }
+
+                return this.el.noUiSlider.pips(grid);
             },
 
             setCssWithoutPips() {
-                if (!this.el) {
+                if (!this.isSliderReady()) {
                     return;
                 }
 
@@ -455,7 +527,7 @@
             },
 
             removeCssWithoutPips() {
-                if (!this.el) {
+                if (!this.isSliderReady()) {
                     return;
                 }
 
@@ -463,42 +535,73 @@
             },
 
             setClickablePips() {
+                // Limpiar listeners anteriores
+                this.removeClickablePipsListeners();
+
                 const func = (e) => {
-                    if (e.target.dataset.value !== undefined) {
-                        this.set(e.target.dataset.value);
+                    const target = e.target.closest('.noUi-value');
+                    if (target?.dataset.value !== undefined) {
+                        this.set(target.dataset.value);
                     }
                 };
-                const mode = this.pips.mode;
 
                 this.$nextTick(() => {
-                    this.el.querySelectorAll(".noUi-pips .noUi-value").forEach(el => {
-                        el.addEventListener('click', func);
-                        el.style.cursor = 'pointer';
-                    });
+                    const pipsContainer = this.el.querySelector('.noUi-pips');
+                    if (pipsContainer) {
+                        pipsContainer.addEventListener('click', func);
+                        this.clickablePipsListeners.push({ element: pipsContainer, handler: func });
+                    }
                 });
             },
 
+            removeClickablePipsListeners() {
+                this.clickablePipsListeners.forEach(({ element, handler }) => {
+                    element.removeEventListener('click', handler);
+                });
+
+                this.clickablePipsListeners = [];
+            },
+
             setMergeTooltips() {
-                if (this.mergeTooltips === null) {
+                if (!this.mergeTooltips || !this.isSliderReady()) {
                     return;
                 }
 
-                const threshold = this.mergeTooltips?.threshold || 15;
-                const separator = this.mergeTooltips?.separator || ' - ';
+                const threshold = this.mergeTooltips.threshold || 15;
+                const separator = this.mergeTooltips.separator || ' - ';
 
                 mergeTooltips(this.el, threshold, separator);
+            },
+
+            isSliderReady() {
+                return this.el?.noUiSlider != null;
+            },
+
+            scheduleUpdate(options) {
+                if (!this.pendingUpdates) {
+                    this.pendingUpdates = {};
+                }
+
+                Object.assign(this.pendingUpdates, options);
+
+                if (!this.updateScheduled) {
+                    this.updateScheduled = true;
+                    this.$nextTick(() => {
+                        if (this.pendingUpdates && this.isSliderReady()) {
+                            this.el.noUiSlider.updateOptions(this.pendingUpdates, false);
+                            this.pendingUpdates = null;
+                        }
+                        this.updateScheduled = false;
+                    });
+                }
             },
         },
 
         watch: {
-            currentValues(v) {
-                if (!this.compareValues(v, this.get())) {
-                    this.set(v, false);
-                }
-            },
-
             modelValue: {
                 handler(v) {
+                    if (!this.isSliderReady()) return;
+
                     if (!this.compareValues(v, this.get())) {
                         this.set(v, false);
                     }
@@ -524,20 +627,20 @@
             },
 
             step(v) {
-                this.updateOptions({
+                this.scheduleUpdate({
                     step: v,
                 });
             },
 
             margin(v) {
-                this.updateOptions({
+                this.scheduleUpdate({
                     margin: v,
                 });
             },
 
             padding: {
                 handler(v) {
-                    this.updateOptions({
+                    this.scheduleUpdate({
                         padding: v,
                     });
                 },
@@ -545,21 +648,22 @@
             },
 
             limit(v) {
-                this.updateOptions({
+                this.scheduleUpdate({
                     limit: v,
                 });
             },
 
             tooltips(v) {
-                this.updateOptions({
-                    tooltips: v,
-                    pips: this.pips,
+                this.scheduleUpdate({
+                    tooltips: this.normalizeTooltip(v),
                 });
+
+                this.$nextTick(() => this.setMergeTooltips());
             },
 
             format: {
                 handler(v) {
-                    this.updateOptions({
+                    this.scheduleUpdate({
                         format: v,
                     });
                 },
@@ -568,7 +672,7 @@
 
             range: {
                 handler(v) {
-                    this.updateOptions({
+                    this.scheduleUpdate({
                         range: v,
                     });
 
