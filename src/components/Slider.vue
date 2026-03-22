@@ -1,9 +1,10 @@
 <template>
     <div
-        ref="el"
-        class="noUi-slider-x"
-        :class="{'noUi-slider-x-toggle-tooltip': tooltipOnClick !== undefined}"
-    ></div>
+        class="noUi-slider-x-wrapper"
+        :class="{'noUi-slider-x-toggle-tooltip': tooltipOnClick, 'noUi-slider-x-vertical': orientation === 'vertical'}"
+    >
+        <div ref="el" :id="id" class="noUi-slider-x"></div>
+    </div>
 </template>
 <script>
     import noUiSlider from 'nouislider';
@@ -23,7 +24,7 @@
     export default {
         props: {
             start: {
-                type: [Array, Number],
+                type: [Array, Number, String],
                 validator(v) {
                     if (Array.isArray(v)) {
                         return v.length && v.every(i => typeof i === 'number');
@@ -156,17 +157,17 @@
 
             pipsys: {
                 type: Boolean,
-                default: undefined,
+                default: false,
             },
 
             clickablePips: {
                 type: Boolean,
-                default: undefined,
+                default: false,
             },
 
             tooltipOnClick: {
                 type: Boolean,
-                default: undefined,
+                default: false,
             },
 
             mergeTooltips: {
@@ -222,8 +223,11 @@
                 events: [],
                 el: null,
                 clickablePipsListeners: [],
+                mergeTooltipsActive: false,
                 pendingUpdates: null,
                 updateScheduled: false,
+                settingFromWatcher: false,
+                animationStyleEl: null,
             }
         },
 
@@ -231,6 +235,10 @@
             this.create();
 
             this.registerEvents();
+
+            if (this.disable) {
+                this.setDisable();
+            }
         },
 
         beforeUnmount() {
@@ -238,12 +246,16 @@
         },
 
         methods: {
-            create() {
+            isSliderReady() {
+                return !!this.el?.noUiSlider;
+            },
+
+            create(initialValues) {
                 this.el = this.$refs['el'];
 
-                let start = this.modelValue;
+                let start = initialValues !== undefined ? initialValues : this.modelValue;
 
-                if (this.start !== undefined && this.start !== null) {
+                if (start == null && this.start !== undefined && this.start !== null) {
                     start = this.start;
                 }
 
@@ -255,38 +267,43 @@
                     start: start,
                     connect: this.connect,
                     range: this.range,
-                    step: this.step,
-                    margin: this.margin,
-                    padding: this.padding,
-                    limit: this.limit,
                     direction: this.direction,
                     orientation: this.orientation,
                     animate: this.animate,
-                    handleAttributes: this.handleAttributes,
                     keyboardSupport: this.keyboardSupport,
                     keyboardDefaultStep: this.keyboardDefaultStep,
                     keyboardPageMultiplier: this.keyboardPageMultiplier,
                     keyboardMultiplier: this.keyboardMultiplier,
                     behaviour: this.behaviour,
-                    snap: this.snap,
-                    cssPrefix: this.cssPrefix,
-                    cssClasses: this.cssClasses,
-                    animationDuration: this.animationDuration,
+                    padding: this.padding,
                 };
 
-                if (this.ariaFormat) {
-                    configs['ariaFormat'] = this.ariaFormat;
+                const optional = {
+                    step: this.step,
+                    margin: this.margin,
+                    limit: this.limit,
+                    snap: this.snap,
+                    handleAttributes: this.handleAttributes,
+                    cssPrefix: this.cssPrefix,
+                    cssClasses: this.cssClasses,
+                    animationDuration: this.animate ? (this.animationDuration || 300) : 0,
+                    ariaFormat: this.ariaFormat,
+                    format: this.format,
+                };
+
+                Object.entries(optional).forEach(([key, value]) => {
+                    if (value !== undefined && value !== null) {
+                        configs[key] = value;
+                    }
+                });
+
+                if (this.tooltips || this.tooltipOnClick) {
+                    configs['tooltips'] = this.tooltips
+                        ? this.normalizeTooltip(this.tooltips)
+                        : true;
                 }
 
-                if (this.format) {
-                    configs['format'] = this.format;
-                }
-
-                if (this.tooltips) {
-                    configs['tooltips'] = this.normalizeTooltip(this.tooltips);
-                }
-
-                if (this.pipsys !== undefined && !configs['pips']) {
+                if (this.pipsys && !configs['pips']) {
                     configs['pips'] = {
                         mode: 'steps',
                     };
@@ -294,11 +311,13 @@
 
                 noUiSlider.create(this.el, configs);
 
+                this.updateAnimationCSS();
+
                 this.$nextTick(() => {
-                    if (!this.pips) {
-                        this.setCssWithoutPips();
-                    } else {
+                    if (this.pips) {
                         this.setPips(this.pips);
+                    } else if (!this.pipsys) {
+                        this.setCssWithoutPips();
                     }
 
                     this.setMergeTooltips();
@@ -328,13 +347,20 @@
                 return JSON.stringify(toNorm(v1)) === JSON.stringify(toNorm(v2));
             },
 
+            hasDeepChanged(v, oldV) {
+                return JSON.stringify(v) !== JSON.stringify(oldV);
+            },
+
             // Events
             registerEvents() {
                 generalEvents.forEach(event => {
                     this.registerBasicEvent(event);
                 });
 
-                this.registerHoverEvent();
+                if (this.behaviour.includes('hover')) {
+                    this.registerHoverEvent();
+                }
+
                 this.registerUpdateEvent();
             },
 
@@ -354,9 +380,11 @@
                 this.on('update', (values, handle, unencoded, tap, positions) => {
                     this.$emit('update', {values, handle, unencoded, tap, positions})
 
-                    let value = values.length > 1 ? values : values[0];
+                    let value = unencoded.length > 1 ? [...unencoded] : unencoded[0];
 
-                    this.$emit('update:modelValue', value);
+                    if (!this.settingFromWatcher && !this.compareValues(value, this.modelValue)) {
+                        this.$emit('update:modelValue', value);
+                    }
                 });
             },
 
@@ -370,10 +398,27 @@
                 });
             },
 
+            recreate() {
+                const currentValues = this.modelValue;
+                this.destroy();
+                this.create(currentValues);
+                this.registerEvents();
+
+                if (this.disable) {
+                    this.setDisable();
+                }
+            },
+
             // Public methods
             destroy() {
                 this.offAllEvents();
+                this.removeMergeTooltips();
                 this.removeClickablePipsListeners();
+
+                if (this.animationStyleEl) {
+                    this.animationStyleEl.remove();
+                    this.animationStyleEl = null;
+                }
 
                 if (this.isSliderReady()) {
                     this.el.noUiSlider.destroy();
@@ -382,90 +427,83 @@
             },
 
             getSteps() {
-                if (!this.isSliderReady()) {
-                    return null;
-                }
-
+                if (!this.isSliderReady()) return;
                 return this.el.noUiSlider.steps();
             },
 
             on(eventName, callback) {
-                if (!this.isSliderReady()) {
-                    return;
-                }
+                if (!this.isSliderReady()) return;
 
                 this.events.push(eventName);
                 this.el.noUiSlider.on(eventName, callback);
             },
 
             off(eventName) {
-                if (!this.isSliderReady()) {
-                    return;
-                }
+                if (!this.isSliderReady()) return;
 
                 this.el.noUiSlider.off(eventName);
             },
 
             get(unencoded) {
-                if (!this.isSliderReady()) {
-                    return null;
-                }
+                if (!this.isSliderReady()) return;
 
                 return this.el.noUiSlider.get(unencoded);
             },
 
             set(input, fireSetEvent, exactInput) {
-                if (!this.isSliderReady()) {
-                    return;
-                }
+                if (!this.isSliderReady()) return;
 
                 this.el.noUiSlider.set(input, fireSetEvent, exactInput);
             },
 
             setHandle(handleNumber, value, fireSetEvent, exactInput) {
-                if (!this.isSliderReady()) {
-                    return;
-                }
+                if (!this.isSliderReady()) return;
 
                 this.el.noUiSlider.setHandle(handleNumber, value, fireSetEvent, exactInput);
             },
 
             reset(fireSetEvent) {
-                if (!this.isSliderReady()) {
-                    return;
-                }
+                if (!this.isSliderReady()) return;
 
                 this.el.noUiSlider.reset(fireSetEvent);
             },
 
             setDisable(handleNumber) {
-                if (!this.isSliderReady()) {
-                    return;
-                }
+                if (!this.isSliderReady()) return;
 
                 this.el.noUiSlider.disable(handleNumber);
             },
 
             setEnable(handleNumber) {
-                if (!this.isSliderReady()) {
-                    return;
-                }
+                if (!this.isSliderReady()) return;
 
                 this.el.noUiSlider.enable(handleNumber);
             },
 
             updateOptions(optionsToUpdate, fireSetEvent) {
-                if (!this.isSliderReady()) {
-                    return;
-                }
+                if (!this.isSliderReady()) return;
 
                 this.el.noUiSlider.updateOptions(optionsToUpdate, fireSetEvent);
             },
 
-            removePips() {
-                if (!this.isSliderReady()) {
-                    return;
+            scheduleUpdate(optionsToUpdate) {
+                this.pendingUpdates = Object.assign(this.pendingUpdates || {}, optionsToUpdate);
+
+                if (!this.updateScheduled) {
+                    this.updateScheduled = true;
+
+                    this.$nextTick(() => {
+                        this.updateOptions(this.pendingUpdates);
+                        this.pendingUpdates = null;
+                        this.updateScheduled = false;
+                    });
                 }
+            },
+
+            removePips() {
+                if (!this.isSliderReady()) return;
+
+                this.removeClickablePipsListeners();
 
                 this.setCssWithoutPips();
 
@@ -473,40 +511,43 @@
             },
 
             removeTooltips() {
-                if (!this.isSliderReady()) {
-                    return;
-                }
+                if (!this.isSliderReady()) return;
 
                 this.el.noUiSlider.removeTooltips();
             },
 
             getPositions() {
-                if (!this.isSliderReady()) {
-                    return null;
-                }
+                if (!this.isSliderReady()) return;
 
                 return this.el.noUiSlider.getPositions();
             },
 
             getTooltips() {
-                if (!this.isSliderReady()) {
-                    return null;
-                }
+                if (!this.isSliderReady()) return;
 
                 return this.el.noUiSlider.getTooltips();
             },
 
             getOrigins() {
-                if (!this.isSliderReady()) {
-                    return null;
-                }
+                if (!this.isSliderReady()) return;
 
                 return this.el.noUiSlider.getOrigins();
             },
 
+            getOptions() {
+                if (!this.isSliderReady()) return;
+                return this.el.noUiSlider.options;
+            },
+
             setPips(grid) {
-                if (!grid || !this.isSliderReady()) {
-                    return;
+                if (grid) {
+                    this.removeCssWithoutPips();
+
+                    if (this.clickablePips) {
+                        this.setClickablePips();
+                    }
+
+                    return this.el.noUiSlider.pips(grid);
                 }
 
                 this.removeCssWithoutPips();
@@ -539,27 +580,66 @@
                 this.removeClickablePipsListeners();
 
                 const func = (e) => {
-                    const target = e.target.closest('.noUi-value');
-                    if (target?.dataset.value !== undefined) {
-                        this.set(target.dataset.value);
+                    if (e.target.dataset.value !== undefined) {
+                        const clickedValue = Number(e.target.dataset.value);
+                        const currentValues = this.get(true);
+
+                        if (Array.isArray(currentValues)) {
+                            let closestHandle = 0;
+                            let minDistance = Math.abs(currentValues[0] - clickedValue);
+
+                            for (let i = 1; i < currentValues.length; i++) {
+                                const distance = Math.abs(currentValues[i] - clickedValue);
+                                if (distance < minDistance) {
+                                    minDistance = distance;
+                                    closestHandle = i;
+                                }
+                            }
+
+                            this.setHandle(closestHandle, clickedValue);
+                        } else {
+                            this.set(clickedValue);
+                        }
                     }
                 };
 
                 this.$nextTick(() => {
-                    const pipsContainer = this.el.querySelector('.noUi-pips');
-                    if (pipsContainer) {
-                        pipsContainer.addEventListener('click', func);
-                        this.clickablePipsListeners.push({ element: pipsContainer, handler: func });
-                    }
+                    this.el.querySelectorAll(".noUi-pips .noUi-value").forEach(el => {
+                        el.addEventListener('click', func);
+                        el.style.cursor = 'pointer';
+                        this.clickablePipsListeners.push({ el, func });
+                    });
                 });
             },
 
             removeClickablePipsListeners() {
-                this.clickablePipsListeners.forEach(({ element, handler }) => {
-                    element.removeEventListener('click', handler);
+                this.clickablePipsListeners.forEach(({ el, func }) => {
+                    el.removeEventListener('click', func);
                 });
-
                 this.clickablePipsListeners = [];
+            },
+
+            removeMergeTooltips() {
+                if (this.mergeTooltipsActive && this.isSliderReady()) {
+                    this.el.noUiSlider.off('update.mergeTooltips');
+                    this.mergeTooltipsActive = false;
+                }
+            },
+
+            updateAnimationCSS() {
+                // Eliminar style previo si existe
+                if (this.animationStyleEl) {
+                    this.animationStyleEl.remove();
+                    this.animationStyleEl = null;
+                }
+
+                if (!this.animate) return;
+
+                const duration = (this.animationDuration || 300) / 1000;
+                const style = document.createElement('style');
+                style.textContent = `#${this.id}.noUi-state-tap .noUi-connect, #${this.id}.noUi-state-tap .noUi-origin { transition: transform ${duration}s !important; }`;
+                document.head.appendChild(style);
+                this.animationStyleEl = style;
             },
 
             setMergeTooltips() {
@@ -567,10 +647,19 @@
                     return;
                 }
 
+                // Check if tooltips are enabled
+                const tooltips = this.el.noUiSlider.getTooltips();
+                if (!tooltips || tooltips.every(t => t === false)) {
+                    return;
+                }
+
+                this.removeMergeTooltips();
+
                 const threshold = this.mergeTooltips.threshold || 15;
                 const separator = this.mergeTooltips.separator || ' - ';
 
                 mergeTooltips(this.el, threshold, separator);
+                this.mergeTooltipsActive = true;
             },
 
             isSliderReady() {
@@ -602,15 +691,19 @@
                 handler(v) {
                     if (!this.isSliderReady()) return;
 
-                    if (!this.compareValues(v, this.get())) {
+                    if (!this.compareValues(v, this.get(true))) {
+                        this.settingFromWatcher = true;
                         this.set(v, false);
+                        this.settingFromWatcher = false;
                     }
                 },
                 deep: true,
             },
 
             pips: {
-                handler(v) {
+                handler(v, oldV) {
+                    if (!this.hasDeepChanged(v, oldV)) return;
+
                     this.removePips();
 
                     this.$nextTick(() => this.setPips(v));
@@ -627,58 +720,101 @@
             },
 
             step(v) {
-                this.scheduleUpdate({
-                    step: v,
-                });
+                this.scheduleUpdate({ step: v });
             },
 
             margin(v) {
-                this.scheduleUpdate({
-                    margin: v,
-                });
+                this.scheduleUpdate({ margin: v });
             },
 
             padding: {
-                handler(v) {
-                    this.scheduleUpdate({
-                        padding: v,
-                    });
+                handler(v, oldV) {
+                    if (!this.hasDeepChanged(v, oldV)) return;
+                    this.scheduleUpdate({ padding: v });
                 },
                 deep: true,
             },
 
             limit(v) {
-                this.scheduleUpdate({
-                    limit: v,
-                });
+                this.scheduleUpdate({ limit: v });
             },
 
             tooltips(v) {
                 this.scheduleUpdate({
                     tooltips: this.normalizeTooltip(v),
+                    pips: this.pips,
                 });
 
                 this.$nextTick(() => this.setMergeTooltips());
             },
 
             format: {
-                handler(v) {
-                    this.scheduleUpdate({
-                        format: v,
-                    });
+                handler() {
+                    this.recreate();
                 },
                 deep: true,
             },
 
-            range: {
-                handler(v) {
-                    this.scheduleUpdate({
-                        range: v,
-                    });
-
-                    this.$nextTick(() => this.reset());
+            connect: {
+                handler(v, oldV) {
+                    if (!this.hasDeepChanged(v, oldV)) return;
+                    this.recreate();
                 },
                 deep: true,
+            },
+
+            animate() {
+                this.recreate();
+            },
+
+            animationDuration() {
+                this.recreate();
+            },
+
+            snap(v) {
+                this.scheduleUpdate({ snap: v });
+            },
+
+            range: {
+                handler(v, oldV) {
+                    if (!this.hasDeepChanged(v, oldV)) return;
+                    this.scheduleUpdate({ range: v });
+                },
+                deep: true,
+            },
+
+            orientation() {
+                this.recreate();
+            },
+
+            direction() {
+                this.recreate();
+            },
+
+            behaviour() {
+                this.recreate();
+            },
+
+            tooltipOnClick() {
+                if (!this.tooltips) {
+                    this.recreate();
+                }
+            },
+
+            mergeTooltips: {
+                handler(v, oldV) {
+                    if (!this.hasDeepChanged(v, oldV)) return;
+                    this.recreate();
+                },
+                deep: true,
+            },
+
+            clickablePips(v) {
+                if (v) {
+                    this.setClickablePips();
+                } else {
+                    this.removeClickablePipsListeners();
+                }
             },
         },
 
@@ -707,15 +843,7 @@
             'getTooltips',
             'getOrigins',
             'setPips',
+            'getOptions',
         ],
     }
 </script>
-<style>
-    .noUi-slider-x.noUi-slider-x-toggle-tooltip :deep(.noUi-tooltip) {
-        display: none;
-    }
-
-    .noUi-slider-x.noUi-slider-x-toggle-tooltip :deep(.noUi-active .noUi-tooltip) {
-        display: block;
-    }
-</style>
