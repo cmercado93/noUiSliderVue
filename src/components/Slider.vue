@@ -1,7 +1,7 @@
 <template>
     <div
         class="noUi-slider-x-wrapper"
-        :class="{'noUi-slider-x-toggle-tooltip': tooltipOnClick}"
+        :class="{'noUi-slider-x-toggle-tooltip': tooltipOnClick, 'noUi-slider-x-vertical': orientation === 'vertical'}"
     >
         <div ref="el" :id="id" class="noUi-slider-x"></div>
     </div>
@@ -346,6 +346,10 @@
                 return JSON.stringify(toNorm(v1)) === JSON.stringify(toNorm(v2));
             },
 
+            hasDeepChanged(v, oldV) {
+                return JSON.stringify(v) !== JSON.stringify(oldV);
+            },
+
             // Events
             registerEvents() {
                 generalEvents.map(event => {
@@ -378,7 +382,7 @@
 
                     let value = unencoded.length > 1 ? [...unencoded] : unencoded[0];
 
-                    if (!this.settingFromWatcher) {
+                    if (!this.settingFromWatcher && !this.compareValues(value, this.modelValue)) {
                         this.$emit('update:modelValue', value);
                     }
                 });
@@ -649,7 +653,9 @@
             },
 
             pips: {
-                handler(v) {
+                handler(v, oldV) {
+                    if (!this.hasDeepChanged(v, oldV)) return;
+
                     this.removePips();
 
                     this.$nextTick(() => this.setPips(v));
@@ -674,7 +680,8 @@
             },
 
             padding: {
-                handler(v) {
+                handler(v, oldV) {
+                    if (!this.hasDeepChanged(v, oldV)) return;
                     this.scheduleUpdate({ padding: v });
                 },
                 deep: true,
@@ -701,7 +708,8 @@
             },
 
             connect: {
-                handler() {
+                handler(v, oldV) {
+                    if (!this.hasDeepChanged(v, oldV)) return;
                     this.recreate();
                 },
                 deep: true,
@@ -720,10 +728,9 @@
             },
 
             range: {
-                handler(v) {
+                handler(v, oldV) {
+                    if (!this.hasDeepChanged(v, oldV)) return;
                     this.scheduleUpdate({ range: v });
-
-                    this.$nextTick(() => this.reset(false));
                 },
                 deep: true,
             },
@@ -747,7 +754,8 @@
             },
 
             mergeTooltips: {
-                handler() {
+                handler(v, oldV) {
+                    if (!this.hasDeepChanged(v, oldV)) return;
                     this.recreate();
                 },
                 deep: true,
@@ -792,13 +800,5 @@
     }
 </script>
 <style>
-    .noUi-slider-x-wrapper.noUi-slider-x-toggle-tooltip .noUi-slider-x .noUi-origin > .noUi-handle + .noUi-tooltip,
-    .noUi-slider-x-wrapper.noUi-slider-x-toggle-tooltip .noUi-slider-x .noUi-origin > .noUi-handle .noUi-tooltip {
-        display: none !important;
-    }
 
-    .noUi-slider-x-wrapper.noUi-slider-x-toggle-tooltip .noUi-slider-x .noUi-origin > .noUi-handle.noUi-active + .noUi-tooltip,
-    .noUi-slider-x-wrapper.noUi-slider-x-toggle-tooltip .noUi-slider-x .noUi-origin > .noUi-handle.noUi-active .noUi-tooltip {
-        display: block !important;
-    }
 </style>
