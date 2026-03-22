@@ -1,9 +1,10 @@
 <template>
     <div
-        ref="el"
-        class="noUi-slider-x"
-        :class="{'noUi-slider-x-toggle-tooltip': !!tooltipOnClick}"
-    ></div>
+        class="noUi-slider-x-wrapper"
+        :class="{'noUi-slider-x-toggle-tooltip': tooltipOnClick}"
+    >
+        <div ref="el" :id="id" class="noUi-slider-x"></div>
+    </div>
 </template>
 <script>
     import noUiSlider from 'nouislider';
@@ -30,7 +31,7 @@
             },
 
             start: {
-                type: [Array, Number],
+                type: [Array, Number, String],
                 validator(v) {
                     if (Array.isArray(v)) {
                         return v.length && v.every(i => typeof i == 'number');
@@ -161,11 +162,20 @@
                 default: null,
             },
 
-            pipsys: {},
+            pipsys: {
+                type: Boolean,
+                default: false,
+            },
 
-            clickablePips: {},
+            clickablePips: {
+                type: Boolean,
+                default: false,
+            },
 
-            tooltipOnClick: {},
+            tooltipOnClick: {
+                type: Boolean,
+                default: false,
+            },
 
             mergeTooltips: {
                 default: null,
@@ -212,7 +222,6 @@
 
         data() {
             return {
-                currentValues: null,
                 preHoverValue: null,
                 events: [],
                 el: null,
@@ -220,6 +229,8 @@
                 mergeTooltipsActive: false,
                 pendingUpdates: null,
                 updateScheduled: false,
+                settingFromWatcher: false,
+                animationStyleEl: null,
             }
         },
 
@@ -238,12 +249,16 @@
         },
 
         methods: {
-            create() {
+            isSliderReady() {
+                return !!this.el?.noUiSlider;
+            },
+
+            create(initialValues) {
                 this.el = this.$refs['el'];
 
-                let start = this.modelValue;
+                let start = initialValues !== undefined ? initialValues : this.modelValue;
 
-                if (this.start !== undefined && this.start !== null) {
+                if (start == null && this.start !== undefined && this.start !== null) {
                     start = this.start;
                 }
 
@@ -255,35 +270,40 @@
                     start: start,
                     connect: this.connect,
                     range: this.range,
-                    step: this.step,
-                    margin: this.margin,
-                    padding: this.padding,
-                    limit: this.limit,
                     direction: this.direction,
                     orientation: this.orientation,
                     animate: this.animate,
-                    handleAttributes: this.handleAttributes,
                     keyboardSupport: this.keyboardSupport,
                     keyboardDefaultStep: this.keyboardDefaultStep,
                     keyboardPageMultiplier: this.keyboardPageMultiplier,
                     keyboardMultiplier: this.keyboardMultiplier,
                     behaviour: this.behaviour,
-                    snap: this.snap,
-                    cssPrefix: this.cssPrefix,
-                    cssClasses: this.cssClasses,
-                    animationDuration: this.animationDuration,
+                    padding: this.padding,
                 };
 
-                if (this.ariaFormat) {
-                    configs['ariaFormat'] = this.ariaFormat;
-                }
+                const optional = {
+                    step: this.step,
+                    margin: this.margin,
+                    limit: this.limit,
+                    snap: this.snap,
+                    handleAttributes: this.handleAttributes,
+                    cssPrefix: this.cssPrefix,
+                    cssClasses: this.cssClasses,
+                    animationDuration: this.animate ? (this.animationDuration || 300) : 0,
+                    ariaFormat: this.ariaFormat,
+                    format: this.format,
+                };
 
-                if (this.format) {
-                    configs['format'] = this.format;
-                }
+                Object.entries(optional).forEach(([key, value]) => {
+                    if (value !== undefined && value !== null) {
+                        configs[key] = value;
+                    }
+                });
 
-                if (this.tooltips) {
-                    configs['tooltips'] = this.normalizeTooltip(this.tooltips);
+                if (this.tooltips || this.tooltipOnClick) {
+                    configs['tooltips'] = this.tooltips
+                        ? this.normalizeTooltip(this.tooltips)
+                        : true;
                 }
 
                 if (this.pipsys && !configs['pips']) {
@@ -293,6 +313,8 @@
                 }
 
                 noUiSlider.create(this.el, configs);
+
+                this.updateAnimationCSS();
 
                 this.$nextTick(() => {
                     if (this.pips) {
@@ -331,9 +353,9 @@
                 });
 
                 if (this.behaviour.includes('hover')) {
-                    this.regiterHoverEvent();
+                    this.registerHoverEvent();
                 }
-                this.regiterUpdateEvent();
+                this.registerUpdateEvent();
             },
 
             offAllEvents() {
@@ -350,19 +372,19 @@
                 });
             },
 
-            regiterUpdateEvent() {
+            registerUpdateEvent() {
                 this.on('update', (values, handle, unencoded, tap, positions) => {
                     this.$emit('update', {values, handle, unencoded, tap, positions})
 
-                    let value = values.length > 1 ? values : values[0];
+                    let value = unencoded.length > 1 ? [...unencoded] : unencoded[0];
 
-                    this.currentValues = value;
-
-                    this.$emit('update:modelValue', value);
+                    if (!this.settingFromWatcher) {
+                        this.$emit('update:modelValue', value);
+                    }
                 });
             },
 
-            regiterHoverEvent() {
+            registerHoverEvent() {
                 this.on('hover', (value) => {
                     if (value != this.preHoverValue) {
                         this.preHoverValue = value;
@@ -372,11 +394,27 @@
                 });
             },
 
+            recreate() {
+                const currentValues = this.modelValue;
+                this.destroy();
+                this.create(currentValues);
+                this.registerEvents();
+
+                if (this.disable) {
+                    this.setDisable();
+                }
+            },
+
             // Public methods
             destroy() {
                 this.offAllEvents();
                 this.removeMergeTooltips();
                 this.removeClickablePipsListeners();
+
+                if (this.animationStyleEl) {
+                    this.animationStyleEl.remove();
+                    this.animationStyleEl = null;
+                }
 
                 if (this.el?.noUiSlider) {
                     this.el.noUiSlider.destroy();
@@ -384,50 +422,72 @@
             },
 
             getSteps() {
+                if (!this.isSliderReady()) return;
                 return this.el.noUiSlider.steps();
             },
 
             on(eventName, callback) {
+                if (!this.isSliderReady()) return;
                 this.events.push(eventName);
                 this.el.noUiSlider.on(eventName, callback);
             },
 
             off(eventName) {
+                if (!this.isSliderReady()) return;
                 this.el.noUiSlider.off(eventName);
             },
 
             get(unencoded) {
+                if (!this.isSliderReady()) return;
                 return this.el.noUiSlider.get(unencoded);
             },
 
             set(input, fireSetEvent, exactInput) {
+                if (!this.isSliderReady()) return;
                 this.el.noUiSlider.set(input, fireSetEvent, exactInput);
             },
 
             setHandle(handleNumber, value, fireSetEvent, exactInput) {
+                if (!this.isSliderReady()) return;
                 this.el.noUiSlider.setHandle(handleNumber, value, fireSetEvent, exactInput);
             },
 
             reset(fireSetEvent) {
+                if (!this.isSliderReady()) return;
                 this.el.noUiSlider.reset(fireSetEvent);
             },
 
             setDisable(handleNumber) {
+                if (!this.isSliderReady()) return;
                 this.el.noUiSlider.disable(handleNumber);
             },
 
             setEnable(handleNumber) {
+                if (!this.isSliderReady()) return;
                 this.el.noUiSlider.enable(handleNumber);
             },
 
             updateOptions(optionsToUpdate, fireSetEvent) {
+                if (!this.isSliderReady()) return;
                 this.el.noUiSlider.updateOptions(optionsToUpdate, fireSetEvent);
             },
 
-            removePips() {
-                if (!this.isSliderReady()) {
-                    return;
+            scheduleUpdate(optionsToUpdate) {
+                this.pendingUpdates = Object.assign(this.pendingUpdates || {}, optionsToUpdate);
+
+                if (!this.updateScheduled) {
+                    this.updateScheduled = true;
+
+                    this.$nextTick(() => {
+                        this.updateOptions(this.pendingUpdates);
+                        this.pendingUpdates = null;
+                        this.updateScheduled = false;
+                    });
                 }
+            },
+
+            removePips() {
+                if (!this.isSliderReady()) return;
 
                 this.removeClickablePipsListeners();
 
@@ -437,22 +497,27 @@
             },
 
             removeTooltips() {
+                if (!this.isSliderReady()) return;
                 this.el.noUiSlider.removeTooltips();
             },
 
             getPositions() {
+                if (!this.isSliderReady()) return;
                 return this.el.noUiSlider.getPositions();
             },
 
             getTooltips() {
+                if (!this.isSliderReady()) return;
                 return this.el.noUiSlider.getTooltips();
             },
 
             getOrigins() {
+                if (!this.isSliderReady()) return;
                 return this.el.noUiSlider.getOrigins();
             },
 
             getOptions() {
+                if (!this.isSliderReady()) return;
                 return this.el.noUiSlider.options;
             },
 
@@ -460,7 +525,7 @@
                 if (grid) {
                     this.removeCssWithoutPips();
 
-                    if (this.clickablePips !== undefined) {
+                    if (this.clickablePips) {
                         this.setClickablePips();
                     }
 
@@ -487,17 +552,42 @@
             setClickablePips() {
                 const func = (e) => {
                     if (e.target.dataset.value !== undefined) {
-                        this.set(e.target.dataset.value);
+                        const clickedValue = Number(e.target.dataset.value);
+                        const currentValues = this.get(true);
+
+                        if (Array.isArray(currentValues)) {
+                            let closestHandle = 0;
+                            let minDistance = Math.abs(currentValues[0] - clickedValue);
+
+                            for (let i = 1; i < currentValues.length; i++) {
+                                const distance = Math.abs(currentValues[i] - clickedValue);
+                                if (distance < minDistance) {
+                                    minDistance = distance;
+                                    closestHandle = i;
+                                }
+                            }
+
+                            this.setHandle(closestHandle, clickedValue);
+                        } else {
+                            this.set(clickedValue);
+                        }
                     }
                 };
-                const mode = this.pips.mode;
 
                 this.$nextTick(() => {
                     this.el.querySelectorAll(".noUi-pips .noUi-value").forEach(el => {
                         el.addEventListener('click', func);
                         el.style.cursor = 'pointer';
+                        this.clickablePipsListeners.push({ el, func });
                     });
                 });
+            },
+
+            removeClickablePipsListeners() {
+                this.clickablePipsListeners.forEach(({ el, func }) => {
+                    el.removeEventListener('click', func);
+                });
+                this.clickablePipsListeners = [];
             },
 
             removeMergeTooltips() {
@@ -505,6 +595,22 @@
                     this.el.noUiSlider.off('update.mergeTooltips');
                     this.mergeTooltipsActive = false;
                 }
+            },
+
+            updateAnimationCSS() {
+                // Eliminar style previo si existe
+                if (this.animationStyleEl) {
+                    this.animationStyleEl.remove();
+                    this.animationStyleEl = null;
+                }
+
+                if (!this.animate) return;
+
+                const duration = (this.animationDuration || 300) / 1000;
+                const style = document.createElement('style');
+                style.textContent = `#${this.id}.noUi-state-tap .noUi-connect, #${this.id}.noUi-state-tap .noUi-origin { transition: transform ${duration}s !important; }`;
+                document.head.appendChild(style);
+                this.animationStyleEl = style;
             },
 
             setMergeTooltips() {
@@ -529,18 +635,14 @@
         },
 
         watch: {
-            currentValues(v) {
-                if (!this.compareValues(v, this.get())) {
-                    this.set(v, false);
-                }
-            },
-
             modelValue: {
                 handler(v) {
                     if (!this.isSliderReady()) return;
 
                     if (!this.compareValues(v, this.get(true))) {
+                        this.settingFromWatcher = true;
                         this.set(v, false);
+                        this.settingFromWatcher = false;
                     }
                 },
                 deep: true,
@@ -564,34 +666,26 @@
             },
 
             step(v) {
-                this.updateOptions({
-                    step: v,
-                });
+                this.scheduleUpdate({ step: v });
             },
 
             margin(v) {
-                this.updateOptions({
-                    margin: v,
-                });
+                this.scheduleUpdate({ margin: v });
             },
 
             padding: {
                 handler(v) {
-                    this.updateOptions({
-                        padding: v,
-                    });
+                    this.scheduleUpdate({ padding: v });
                 },
                 deep: true,
             },
 
             limit(v) {
-                this.updateOptions({
-                    limit: v,
-                });
+                this.scheduleUpdate({ limit: v });
             },
 
             tooltips(v) {
-                this.updateOptions({
+                this.scheduleUpdate({
                     tooltips: this.normalizeTooltip(v),
                     pips: this.pips,
                 });
@@ -600,44 +694,71 @@
             },
 
             format: {
-                handler(v) {
-                    this.updateOptions({
-                        format: v,
-                    });
+                handler() {
+                    this.recreate();
                 },
                 deep: true,
             },
 
             connect: {
-                handler(v) {
-                    this.updateOptions({
-                        connect: v,
-                    });
+                handler() {
+                    this.recreate();
                 },
                 deep: true,
             },
 
-            animate(v) {
-                this.updateOptions({
-                    animate: v,
-                });
+            animate() {
+                this.recreate();
+            },
+
+            animationDuration() {
+                this.recreate();
             },
 
             snap(v) {
-                this.updateOptions({
-                    snap: v,
-                });
+                this.scheduleUpdate({ snap: v });
             },
 
             range: {
                 handler(v) {
-                    this.updateOptions({
-                        range: v,
-                    });
+                    this.scheduleUpdate({ range: v });
 
-                    this.$nextTick(() => this.reset());
+                    this.$nextTick(() => this.reset(false));
                 },
                 deep: true,
+            },
+
+            orientation() {
+                this.recreate();
+            },
+
+            direction() {
+                this.recreate();
+            },
+
+            behaviour() {
+                this.recreate();
+            },
+
+            tooltipOnClick() {
+                if (!this.tooltips) {
+                    this.recreate();
+                }
+            },
+
+            mergeTooltips: {
+                handler() {
+                    this.recreate();
+                },
+                deep: true,
+            },
+
+            clickablePips(v) {
+                if (v) {
+                    this.setClickablePips();
+                } else {
+                    this.removeClickablePipsListeners();
+                }
             },
         },
 
@@ -671,11 +792,13 @@
     }
 </script>
 <style>
-    .noUi-slider-x.noUi-slider-x-toggle-tooltip :deep(.noUi-tooltip) {
-        display: none;
+    .noUi-slider-x-wrapper.noUi-slider-x-toggle-tooltip .noUi-slider-x .noUi-origin > .noUi-handle + .noUi-tooltip,
+    .noUi-slider-x-wrapper.noUi-slider-x-toggle-tooltip .noUi-slider-x .noUi-origin > .noUi-handle .noUi-tooltip {
+        display: none !important;
     }
 
-    .noUi-slider-x.noUi-slider-x-toggle-tooltip :deep(.noUi-active .noUi-tooltip) {
-        display: block;
+    .noUi-slider-x-wrapper.noUi-slider-x-toggle-tooltip .noUi-slider-x .noUi-origin > .noUi-handle.noUi-active + .noUi-tooltip,
+    .noUi-slider-x-wrapper.noUi-slider-x-toggle-tooltip .noUi-slider-x .noUi-origin > .noUi-handle.noUi-active .noUi-tooltip {
+        display: block !important;
     }
 </style>
