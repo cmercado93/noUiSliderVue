@@ -18,7 +18,7 @@ const mergeTooltips = function(slider, threshold, separator) {
         }
     });
 
-    slider.noUiSlider.on('update', function (values, handle, unencoded, tap, positions) {
+    slider.noUiSlider.on('update.mergeTooltips', function (values, handle, unencoded, tap, positions) {
 
         var pools = [[]];
         var poolPositions = [[]];
