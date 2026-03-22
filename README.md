@@ -239,7 +239,7 @@ Para cambiar `orientation`, `direction`, `behaviour`, `format`, `connect` o `ani
 
 ## Documentacion
 
-Documentacion con ejemplos y detalles de configuracion: [nouislider-vue.singlecode.net](https://nouislider-vue.singlecode.net/guia/instalacion.html)
+Documentacion con ejemplos y detalles de configuracion: [nouislider-vue.singlecode.net](https://nouislider-vue.singlecode.net/guide/installation)
 
 Documentacion de noUiSlider (plugin base): [refreshless.com/nouislider](https://refreshless.com/nouislider/)
 
