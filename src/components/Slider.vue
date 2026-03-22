@@ -330,7 +330,9 @@
                     this.registerBasicEvent(event);
                 });
 
-                this.regiterHoverEvent();
+                if (this.behaviour.includes('hover')) {
+                    this.regiterHoverEvent();
+                }
                 this.regiterUpdateEvent();
             },
 
@@ -448,6 +450,10 @@
 
             getOrigins() {
                 return this.el.noUiSlider.getOrigins();
+            },
+
+            getOptions() {
+                return this.el.noUiSlider.options;
             },
 
             setPips(grid) {
@@ -586,9 +592,11 @@
 
             tooltips(v) {
                 this.updateOptions({
-                    tooltips: v,
+                    tooltips: this.normalizeTooltip(v),
                     pips: this.pips,
                 });
+
+                this.$nextTick(() => this.setMergeTooltips());
             },
 
             format: {
@@ -598,6 +606,27 @@
                     });
                 },
                 deep: true,
+            },
+
+            connect: {
+                handler(v) {
+                    this.updateOptions({
+                        connect: v,
+                    });
+                },
+                deep: true,
+            },
+
+            animate(v) {
+                this.updateOptions({
+                    animate: v,
+                });
+            },
+
+            snap(v) {
+                this.updateOptions({
+                    snap: v,
+                });
             },
 
             range: {
@@ -637,6 +666,7 @@
             'getTooltips',
             'getOrigins',
             'setPips',
+            'getOptions',
         ],
     }
 </script>
