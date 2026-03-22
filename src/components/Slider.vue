@@ -2,7 +2,7 @@
     <div
         ref="el"
         class="noUi-slider-x"
-        :class="{'noUi-slider-x-toggle-tooltip': tooltipOnClick !== undefined}"
+        :class="{'noUi-slider-x-toggle-tooltip': !!tooltipOnClick}"
     ></div>
 </template>
 <script>
@@ -216,6 +216,10 @@
                 preHoverValue: null,
                 events: [],
                 el: null,
+                clickablePipsListeners: [],
+                mergeTooltipsActive: false,
+                pendingUpdates: null,
+                updateScheduled: false,
             }
         },
 
@@ -223,6 +227,10 @@
             this.create();
 
             this.registerEvents();
+
+            if (this.disable) {
+                this.setDisable();
+            }
         },
 
         beforeUnmount() {
@@ -278,7 +286,7 @@
                     configs['tooltips'] = this.normalizeTooltip(this.tooltips);
                 }
 
-                if (this.pipsys != undefined && !configs['pips']) {
+                if (this.pipsys && !configs['pips']) {
                     configs['pips'] = {
                         mode: 'steps',
                     };
@@ -287,10 +295,10 @@
                 noUiSlider.create(this.el, configs);
 
                 this.$nextTick(() => {
-                    if (!this.pips) {
-                        this.setCssWithoutPips();
-                    } else {
+                    if (this.pips) {
                         this.setPips(this.pips);
+                    } else if (!this.pipsys) {
+                        this.setCssWithoutPips();
                     }
 
                     this.setMergeTooltips();
@@ -365,6 +373,8 @@
             // Public methods
             destroy() {
                 this.offAllEvents();
+                this.removeMergeTooltips();
+                this.removeClickablePipsListeners();
 
                 if (this.el?.noUiSlider) {
                     this.el.noUiSlider.destroy();
@@ -413,6 +423,12 @@
             },
 
             removePips() {
+                if (!this.isSliderReady()) {
+                    return;
+                }
+
+                this.removeClickablePipsListeners();
+
                 this.setCssWithoutPips();
 
                 this.el.noUiSlider.removePips();
@@ -478,15 +494,31 @@
                 });
             },
 
+            removeMergeTooltips() {
+                if (this.mergeTooltipsActive && this.isSliderReady()) {
+                    this.el.noUiSlider.off('update.mergeTooltips');
+                    this.mergeTooltipsActive = false;
+                }
+            },
+
             setMergeTooltips() {
                 if (this.mergeTooltips === null) {
                     return;
                 }
 
-                const threshold = this.mergeTooltips?.threshold || 15;
-                const separator = this.mergeTooltips?.separator || ' - ';
+                // Check if tooltips are enabled
+                const tooltips = this.el.noUiSlider.getTooltips();
+                if (!tooltips || tooltips.every(t => t === false)) {
+                    return;
+                }
+
+                this.removeMergeTooltips();
+
+                const threshold = this.mergeTooltips.threshold || 15;
+                const separator = this.mergeTooltips.separator || ' - ';
 
                 mergeTooltips(this.el, threshold, separator);
+                this.mergeTooltipsActive = true;
             },
         },
 
@@ -499,7 +531,9 @@
 
             modelValue: {
                 handler(v) {
-                    if (!this.compareValues(v, this.get())) {
+                    if (!this.isSliderReady()) return;
+
+                    if (!this.compareValues(v, this.get(true))) {
                         this.set(v, false);
                     }
                 },
