@@ -23,6 +23,13 @@
 
     export default {
         props: {
+            id: {
+                type: String,
+                default: () => {
+                    return 'noUi-slider-x-' + ((Math.random() + 1).toString(36).substring(7));
+                },
+            },
+
             start: {
                 type: [Array, Number, String],
                 validator(v) {
