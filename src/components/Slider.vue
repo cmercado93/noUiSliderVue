@@ -34,7 +34,7 @@
                 type: [Array, Number, String],
                 validator(v) {
                     if (Array.isArray(v)) {
-                        return v.length && v.every(i => typeof i == 'number');
+                        return v.length && v.every(i => typeof i === 'number');
                     }
 
                     return true;
@@ -46,7 +46,7 @@
                 default: false,
                 validator(v) {
                     if (Array.isArray(v)) {
-                        return v.length && v.every(i => typeof i == 'boolean');
+                        return v.length && v.every(i => typeof i === 'boolean');
                     }
 
                     return true;
@@ -70,7 +70,7 @@
                 type: [Array, Number],
                 validator(v) {
                     if (Array.isArray(v)) {
-                        return v.length && v.every(i => typeof i == 'number');
+                        return v.length && v.every(i => typeof i === 'number');
                     }
 
                     return true;
@@ -130,12 +130,12 @@
                 type: [Array, Object, Boolean, Function],
                 default: false,
                 validator(v) {
-                    const validator = (v) => {
-                        if (typeof v == 'boolean' || typeof v == 'function') {
+                    const validateSingle = (item) => {
+                        if (typeof item === 'boolean' || typeof item === 'function') {
                             return true;
                         }
 
-                        if (typeof v == 'object' && Object.prototype.hasOwnProperty.call(v, 'to')) {
+                        if (item && typeof item === 'object' && 'to' in item) {
                             return true;
                         }
 
@@ -143,10 +143,10 @@
                     };
 
                     if (Array.isArray(v)) {
-                        return v.every(validator);
+                        return v.every(validateSingle);
                     }
 
-                    return validator(v);
+                    return validateSingle(v);
                 },
             },
 
@@ -181,7 +181,11 @@
                 default: null,
                 type: Object,
                 validator(v) {
-                    if (typeof v != "object") {
+                    if (v === null) {
+                        return true;
+                    }
+
+                    if (typeof v !== "object") {
                         return false;
                     }
 
@@ -262,7 +266,7 @@
                     start = this.start;
                 }
 
-                if (start == null) {
+                if (start === null) {
                     start = Object.values(this.range)[0];
                 }
 
@@ -328,20 +332,24 @@
             },
 
             normalizeTooltip(v) {
-                if (typeof v == 'function') {
+                if (typeof v === 'function') {
                     return {
                         to: v,
                     }
                 }
 
                 if (Array.isArray(v)) {
-                    return v.map(this.normalizeTooltip);
+                    return v.map(item => this.normalizeTooltip(item));
                 }
 
                 return v;
             },
 
             compareValues(v1, v2) {
+                // Manejar null/undefined primero
+                if (v1 === v2) return true;
+                if (v1 == null || v2 == null) return false;
+
                 const toNorm = (v) => Array.isArray(v) ? v.map(String) : String(v);
                 return JSON.stringify(toNorm(v1)) === JSON.stringify(toNorm(v2));
             },
@@ -352,22 +360,21 @@
 
             // Events
             registerEvents() {
-                generalEvents.map(event => {
+                generalEvents.forEach(event => {
                     this.registerBasicEvent(event);
                 });
 
                 if (this.behaviour.includes('hover')) {
                     this.registerHoverEvent();
                 }
+
                 this.registerUpdateEvent();
             },
 
             offAllEvents() {
-                let l = this.events.length;
-
-                for (let i = 0;i < l;i++) {
-                    this.off(this.events.pop());
-                }
+                const uniqueEvents = [...new Set(this.events)];
+                uniqueEvents.forEach(event => this.off(event));
+                this.events = [];
             },
 
             registerBasicEvent(eventName) {
@@ -390,7 +397,7 @@
 
             registerHoverEvent() {
                 this.on('hover', (value) => {
-                    if (value != this.preHoverValue) {
+                    if (value !== this.preHoverValue) {
                         this.preHoverValue = value;
 
                         this.$emit('hover', value)
@@ -420,8 +427,9 @@
                     this.animationStyleEl = null;
                 }
 
-                if (this.el?.noUiSlider) {
+                if (this.isSliderReady()) {
                     this.el.noUiSlider.destroy();
+                    this.el.noUiSlider = null;
                 }
             },
 
@@ -432,47 +440,56 @@
 
             on(eventName, callback) {
                 if (!this.isSliderReady()) return;
+
                 this.events.push(eventName);
                 this.el.noUiSlider.on(eventName, callback);
             },
 
             off(eventName) {
                 if (!this.isSliderReady()) return;
+
                 this.el.noUiSlider.off(eventName);
             },
 
             get(unencoded) {
                 if (!this.isSliderReady()) return;
+
                 return this.el.noUiSlider.get(unencoded);
             },
 
             set(input, fireSetEvent, exactInput) {
                 if (!this.isSliderReady()) return;
+
                 this.el.noUiSlider.set(input, fireSetEvent, exactInput);
             },
 
             setHandle(handleNumber, value, fireSetEvent, exactInput) {
                 if (!this.isSliderReady()) return;
+
                 this.el.noUiSlider.setHandle(handleNumber, value, fireSetEvent, exactInput);
             },
 
             reset(fireSetEvent) {
                 if (!this.isSliderReady()) return;
+
                 this.el.noUiSlider.reset(fireSetEvent);
             },
 
             setDisable(handleNumber) {
                 if (!this.isSliderReady()) return;
+
                 this.el.noUiSlider.disable(handleNumber);
             },
 
             setEnable(handleNumber) {
                 if (!this.isSliderReady()) return;
+
                 this.el.noUiSlider.enable(handleNumber);
             },
 
             updateOptions(optionsToUpdate, fireSetEvent) {
                 if (!this.isSliderReady()) return;
+
                 this.el.noUiSlider.updateOptions(optionsToUpdate, fireSetEvent);
             },
 
@@ -502,21 +519,25 @@
 
             removeTooltips() {
                 if (!this.isSliderReady()) return;
+
                 this.el.noUiSlider.removeTooltips();
             },
 
             getPositions() {
                 if (!this.isSliderReady()) return;
+
                 return this.el.noUiSlider.getPositions();
             },
 
             getTooltips() {
                 if (!this.isSliderReady()) return;
+
                 return this.el.noUiSlider.getTooltips();
             },
 
             getOrigins() {
                 if (!this.isSliderReady()) return;
+
                 return this.el.noUiSlider.getOrigins();
             },
 
@@ -535,10 +556,18 @@
 
                     return this.el.noUiSlider.pips(grid);
                 }
+
+                this.removeCssWithoutPips();
+
+                if (this.clickablePips) {
+                    this.setClickablePips();
+                }
+
+                return this.el.noUiSlider.pips(grid);
             },
 
             setCssWithoutPips() {
-                if (!this.el) {
+                if (!this.isSliderReady()) {
                     return;
                 }
 
@@ -546,7 +575,7 @@
             },
 
             removeCssWithoutPips() {
-                if (!this.el) {
+                if (!this.isSliderReady()) {
                     return;
                 }
 
@@ -554,6 +583,9 @@
             },
 
             setClickablePips() {
+                // Limpiar listeners anteriores
+                this.removeClickablePipsListeners();
+
                 const func = (e) => {
                     if (e.target.dataset.value !== undefined) {
                         const clickedValue = Number(e.target.dataset.value);
@@ -618,7 +650,7 @@
             },
 
             setMergeTooltips() {
-                if (this.mergeTooltips === null) {
+                if (!this.mergeTooltips || !this.isSliderReady()) {
                     return;
                 }
 
@@ -635,6 +667,29 @@
 
                 mergeTooltips(this.el, threshold, separator);
                 this.mergeTooltipsActive = true;
+            },
+
+            isSliderReady() {
+                return this.el?.noUiSlider != null;
+            },
+
+            scheduleUpdate(options) {
+                if (!this.pendingUpdates) {
+                    this.pendingUpdates = {};
+                }
+
+                Object.assign(this.pendingUpdates, options);
+
+                if (!this.updateScheduled) {
+                    this.updateScheduled = true;
+                    this.$nextTick(() => {
+                        if (this.pendingUpdates && this.isSliderReady()) {
+                            this.el.noUiSlider.updateOptions(this.pendingUpdates, false);
+                            this.pendingUpdates = null;
+                        }
+                        this.updateScheduled = false;
+                    });
+                }
             },
         },
 
@@ -799,6 +854,3 @@
         ],
     }
 </script>
-<style>
-
-</style>
